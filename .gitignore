@@ -1,0 +1,7 @@
+[Bb]in/
+[Oo]bj/
+*.zip
+.vs/
+*.user
+*.userprefs
+Thunderstore/
