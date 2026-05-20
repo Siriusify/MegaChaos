@@ -1,6 +1,47 @@
 # Changelog
 
+## 1.2.0
+
+### New Features
+
+- **Chaos Mode:** Completely new game mode where random chaotic effects are applied at configurable intervals. Activate via the in-game UI (new Chaos tab).
+- **27 Chaos Effects** — including:
+  - `DVD Ekran Koruyucu` — Screen turns black except for a bouncing DVD-style window
+  - `HUD Yok` — Hides InventoryHud, ItemsHud, XpAndGoldHUD; upgrade and level-up screens remain visible
+  - `EXP Süpürge` — Instantly vacuums all XP orbs on the map using the game's own `PickupManager.PickupAllXp()`
+  - `Mob Yağmuru` — Clones active enemies and spawns them around the player
+  - `Karanlık / Körlük` — Screen blindness effects
+  - `Sarhoşluk / Deprem` — Camera shake and drunk camera effects with randomized parameters
+  - `Yakın Plan` — FOV distortion / zoom-in
+  - `Ayna Dünya` — Horizontal screen flip
+  - `Yerçekimi` effects (High/Low Gravity)
+  - `Paket Kaybı` — Input lag / packet loss simulation
+  - `One Hit KO` — Both player and enemies are killed in one hit
+  - `Random Item/Stat/Tome` — Randomly grants or removes items, stat changes, and tomes
+  - `Saldıramama` — Player cannot attack
+  - Time effects: Slow Motion, Hyper Speed, Time Bend
+- **CameraEffectStack:** Concurrent camera effects (shake + drunk, zoom + shake, etc.) now stack correctly instead of overwriting each other.
+- **Chaos Debug Window:** Developer overlay showing active effects and their remaining duration.
+
+### Bug Fixes
+
+- **Level trigger fix:** `GetLevel()` was always returning `0` because it looked for `inventory.level` which does not exist. The correct path is `inventory.playerXp.level`. Level-based rules now work correctly.
+- **HUD Yok** no longer blocks upgrade offer screens, level-up cards, or any interactive popup.
+- **DVD Screensaver** crash fixed by removing `ImageConversion.LoadImage` (IL2CPP GPU context crash). Now uses pure GUI rendering.
+
+---
+
+## 1.1.1 *(hotfix)*
+
+### Bug Fixes
+
+- **Level trigger fix (backport):** `GetLevel()` always returned `0` — the correct data path is `PlayerInventory.playerXp.level`. Level-based reward rules now count level-ups and grant items properly.
+
+---
+
 ## 1.1.0
+
+
 
 ### New Features
 
