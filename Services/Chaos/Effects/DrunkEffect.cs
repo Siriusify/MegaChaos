@@ -27,7 +27,7 @@ namespace MegaChaos.Services.Chaos.Effects
             _swaySpeedY  = Random.Range(1.5f, 3.0f);
             _swayAmpX    = Random.Range(0.05f, 0.15f);
             _swayAmpY    = Random.Range(0.03f, 0.10f);
-            NotificationService.Show("Başın dönüyor...", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("Your head is spinning...", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float deltaTime)
@@ -52,7 +52,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             CameraEffectStack.Unregister(Id);
-            NotificationService.Show("Ayıldın! Bir daha içme!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("You sobered up! Don't drink again!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

@@ -23,7 +23,7 @@ namespace MegaChaos.Services.Chaos.Effects
             float b = Random.Range(0f, 1f);
             _tintTex.SetPixel(0, 0, new Color(r, g, b, Random.Range(0.30f, 0.55f)));
             _tintTex.Apply();
-            NotificationService.Show("Renk filtresi indi!", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("Color filter applied!", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float dt) { }
@@ -40,7 +40,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             if (_tintTex != null) { Object.Destroy(_tintTex); _tintTex = null; }
-            NotificationService.Show("Renk filtresi kalktı!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Color filter removed!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

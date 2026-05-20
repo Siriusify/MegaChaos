@@ -19,7 +19,7 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             _originalTimeScale = Time.timeScale;
             Time.timeScale = Random.Range(3f, 6f);
-            NotificationService.Show("HİPER HIZ BAŞLADI!", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("HYPER SPEED ACTIVATED!", null, NotificationService.NotificationType.Warning);
             MegaChaos.Main.Msg($"[HyperSpeed] timeScale={Time.timeScale}");
         }
 
@@ -29,7 +29,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             Time.timeScale = _originalTimeScale;
-            NotificationService.Show("Hız normale döndü.", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Speed back to normal.", null, NotificationService.NotificationType.Reward);
         }
     }
 }

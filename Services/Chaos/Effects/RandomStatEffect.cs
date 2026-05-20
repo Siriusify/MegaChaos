@@ -41,7 +41,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 var statInv      = GameReflection.GetMember(inventory, "statInventory");
                 var playerStats  = GameReflection.GetMember(inventory, "playerStats"); // PlayerStatsNew
 
-                if (statInv == null) { NotificationService.Show("Stat sistemi bulunamadı.", null, NotificationService.NotificationType.Unlucky); return; }
+                if (statInv == null) { NotificationService.Show("Stat system not found.", null, NotificationService.NotificationType.Unlucky); return; }
 
                 var eStatType = GameReflection.FindType("Il2CppAssets.Scripts.Menu.Shop.EStat", "Assets.Scripts.Menu.Shop.EStat", "EStat");
                 var eStatModifyType = GameReflection.FindType(
@@ -111,7 +111,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     var playerStats  = GameReflection.GetMember(inventory, "playerStats");
                     if (playerStats != null)
                         GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", Type.EmptyTypes);
-                    NotificationService.Show("Stat normale döndü.", null, NotificationService.NotificationType.Reward);
+                    NotificationService.Show("Stat back to normal.", null, NotificationService.NotificationType.Reward);
                 }
             }
             catch { }

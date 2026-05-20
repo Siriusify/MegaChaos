@@ -42,7 +42,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 // Hemen uygula
                 ApplyOneHitKO();
 
-                NotificationService.Show("ONE HIT KO! 1 HP'sin. İyi şanslar 😈", null, NotificationService.NotificationType.Warning);
+                NotificationService.Show("ONE HIT KO! You have 1 HP. Good luck 😈", null, NotificationService.NotificationType.Warning);
             }
             catch (Exception ex) { MegaChaos.Main.Error("[OneHitKO] OnStart: " + ex.Message); }
         }
@@ -130,7 +130,7 @@ namespace MegaChaos.Services.Chaos.Effects
 
         public void OnEnd()
         {
-            NotificationService.Show("One Hit KO bitti — artık normal hayatına dön!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("One Hit KO ended — welcome back to normal life!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

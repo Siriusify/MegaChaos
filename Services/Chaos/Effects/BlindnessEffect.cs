@@ -28,7 +28,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 _mainCamera.clearFlags = CameraClearFlags.SolidColor;
                 _mainCamera.backgroundColor = Color.black;
             }
-            MegaChaos.Main.Msg("[MegaChaos] Korluk basladi (HUD haric)!");
+            MegaChaos.Main.Msg("[MegaChaos] Blindness started.");
         }
         
         public void OnUpdate(float deltaTime) { }
@@ -43,7 +43,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 _mainCamera.clearFlags = _originalClearFlags;
                 _mainCamera.backgroundColor = _originalBackgroundColor;
             }
-            MegaChaos.Main.Msg("[MegaChaos] Korluk bitti.");
+            MegaChaos.Main.Msg("[MegaChaos] Blindness ended.");
         }
     }
 }

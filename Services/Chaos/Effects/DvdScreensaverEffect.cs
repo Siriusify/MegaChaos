@@ -53,7 +53,7 @@ namespace MegaChaos.Services.Chaos.Effects
 
             _stylesInit = false;
 
-            NotificationService.Show("📀 DVD Ekran Koruyucu Başladı!", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("📀 DVD Screensaver started!", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float dt)
@@ -176,7 +176,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 UnityEngine.Object.Destroy(_whiteTex);
                 _whiteTex = null;
             }
-            NotificationService.Show("DVD Ekran Koruyucu Bitti!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("DVD Screensaver ended!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

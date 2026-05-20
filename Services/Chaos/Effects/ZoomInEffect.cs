@@ -21,7 +21,7 @@ namespace MegaChaos.Services.Chaos.Effects
             // Gerçek base'i bilmiyoruz ama 60 varsayalım; stack zaten toplar
             _fovDelta = targetFov - 60f; // 60 oyunun baz FOV'u (stack base ile uyumluk için sabit)
             CameraEffectStack.Register(Id, new CameraEffectStack.CameraDelta { FovOffset = _fovDelta });
-            NotificationService.Show("YAKLAŞ! Görmek zorlaşıyor!", null, NotificationService.NotificationType.Unlucky);
+            NotificationService.Show("ZOOM IN! Vision narrowing!", null, NotificationService.NotificationType.Unlucky);
         }
 
         public void OnUpdate(float deltaTime) { }
@@ -30,7 +30,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             CameraEffectStack.Unregister(Id);
-            NotificationService.Show("Zoom normale döndü!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Zoom back to normal!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

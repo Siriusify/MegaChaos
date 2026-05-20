@@ -89,13 +89,13 @@ namespace MegaChaos.Services.Chaos.Effects
 
             if (count > 0)
             {
-                NotificationService.Show($"HUD Yok! ({count} bileşen gizlendi)", null, NotificationService.NotificationType.Warning);
+                NotificationService.Show($"No HUD! ({count} components hidden)", null, NotificationService.NotificationType.Warning);
                 MegaChaos.Main.Msg($"[NoHud] Total disabled: {count}");
             }
             else
             {
                 // Bu sahnede HUD bileşeni yok (örn. ana menü) — hata değil, normal
-                NotificationService.Show("HUD Yok: Bu sahnede HUD yok.", null, NotificationService.NotificationType.Unlucky);
+                NotificationService.Show("No HUD: No HUD found in this scene.", null, NotificationService.NotificationType.Unlucky);
                 MegaChaos.Main.Warn("[NoHud] No HUD components found in current scene (may be main menu).");
             }
         }
@@ -115,7 +115,7 @@ namespace MegaChaos.Services.Chaos.Effects
             }
             _saved.Clear();
 
-            NotificationService.Show("HUD geri geldi!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("HUD restored!", null, NotificationService.NotificationType.Reward);
             MegaChaos.Main.Msg("[NoHud] All HUD components restored.");
         }
     }

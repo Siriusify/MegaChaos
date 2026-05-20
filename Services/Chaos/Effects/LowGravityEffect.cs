@@ -41,7 +41,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 float mult = UnityEngine.Random.Range(0.05f, 0.20f);
                 SetGravity(new Vector3(0f, _originalGravity.y * mult, 0f));
                 _applied = true;
-                NotificationService.Show($"DÜŞÜK YERÇEK! x{mult:F2} — Ay'a hoş geldin 🌙", null, NotificationService.NotificationType.Warning);
+                NotificationService.Show($"LOW GRAVITY! x{mult:F2} — Welcome to the Moon 🌙", null, NotificationService.NotificationType.Warning);
                 MegaChaos.Main.Msg($"[LowGravity] gravity y={_originalGravity.y * mult:F2}");
             }
             catch (Exception ex) { MegaChaos.Main.Error("[LowGravity] " + ex.Message); }
@@ -53,7 +53,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             if (_applied) { SetGravity(_originalGravity); _applied = false; }
-            NotificationService.Show("Yerçekimi normale döndü!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Gravity back to normal!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

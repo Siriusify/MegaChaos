@@ -31,7 +31,7 @@ namespace MegaChaos.Services.Chaos.Effects
 
                 if (_weaponInventory == null)
                 {
-                    NotificationService.Show("Saldıramama: Silah sistemi bulunamadı.", null, NotificationService.NotificationType.Unlucky);
+                    NotificationService.Show("Pacifist: Weapon system not found.", null, NotificationService.NotificationType.Unlucky);
                     return;
                 }
 
@@ -41,7 +41,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 GameReflection.SetMember(inventory, "pause", true);
                 _applied = true;
 
-                NotificationService.Show("SİLAHLARIN ÇALIŞMIYOR! Kaç kaç!", null, NotificationService.NotificationType.Unlucky);
+                NotificationService.Show("YOUR WEAPONS DON'T WORK! Run!", null, NotificationService.NotificationType.Unlucky);
                 MegaChaos.Main.Msg("[CantAttack] Silahlar durduruldu.");
             }
             catch (Exception ex)
@@ -68,7 +68,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     GameReflection.SetMember(inventory, "pause", false);
                     _applied = false;
                 }
-                NotificationService.Show("Silahların tekrar çalışıyor!", null, NotificationService.NotificationType.Reward);
+                NotificationService.Show("Your weapons work again!", null, NotificationService.NotificationType.Reward);
             }
             catch (Exception ex)
             {

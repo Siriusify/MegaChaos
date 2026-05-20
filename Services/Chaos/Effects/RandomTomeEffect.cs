@@ -34,14 +34,14 @@ namespace MegaChaos.Services.Chaos.Effects
                 var statInv      = GameReflection.GetMember(inventory, "statInventory");
                 var playerStats  = GameReflection.GetMember(inventory, "playerStats");
 
-                if (tomeInv == null) { NotificationService.Show("Tome sistemi bulunamadı.", null, NotificationService.NotificationType.Unlucky); return; }
+                if (tomeInv == null) { NotificationService.Show("Tome system not found.", null, NotificationService.NotificationType.Unlucky); return; }
 
                 // TomeData bul
                 object tomeData = FindTomeData(tomeInv, inventory);
 
                 if (tomeData == null)
                 {
-                    NotificationService.Show("Tome Çekiliş: Tome verisi yüklenemedi.", null, NotificationService.NotificationType.Unlucky);
+                    NotificationService.Show("Tome Lottery: Failed to load tome data.", null, NotificationService.NotificationType.Unlucky);
                     MegaChaos.Main.Warn("[RandomTome] TomeData bulunamadı.");
                     return;
                 }

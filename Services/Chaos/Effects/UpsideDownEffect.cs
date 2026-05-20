@@ -21,7 +21,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 p.m00 = -p.m00; // X eksenini ters çevir (Sol/Sağ da tersine dönsün)
                 _mainCamera.projectionMatrix = p;
             }
-            MegaChaos.Main.Msg("[MegaChaos] Dunya tersine dondu!");
+            MegaChaos.Main.Msg("[MegaChaos] World turned upside down!");
         }
         
         public void OnUpdate(float deltaTime) { }
@@ -34,7 +34,7 @@ namespace MegaChaos.Services.Chaos.Effects
             {
                 _mainCamera.ResetProjectionMatrix();
             }
-            MegaChaos.Main.Msg("[MegaChaos] Dunya normale dondu.");
+            MegaChaos.Main.Msg("[MegaChaos] World back to normal.");
         }
     }
 }

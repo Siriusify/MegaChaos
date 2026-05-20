@@ -36,11 +36,11 @@ namespace MegaChaos.Services.Chaos.Effects
             {
                 _originalScale = _playerTransform.localScale;
                 _playerTransform.localScale = _originalScale * 3f; 
-                MegaChaos.Main.Msg("[MegaChaos] Oyuncu boyutu 3 katına çıkarıldı!");
+                MegaChaos.Main.Msg("[MegaChaos] Player size tripled!");
             }
             else
             {
-                MegaChaos.Main.Msg("[MegaChaos] Uyarı: Büyüme İksiri için oyuncu objesi bulunamadı.");
+                MegaChaos.Main.Msg("[MegaChaos] Warning: Player object not found for Growth Potion.");
             }
         }
 
@@ -52,7 +52,7 @@ namespace MegaChaos.Services.Chaos.Effects
             if (_playerTransform != null)
             {
                 _playerTransform.localScale = _originalScale;
-                MegaChaos.Main.Msg("[MegaChaos] Oyuncu boyutu normale döndü.");
+                MegaChaos.Main.Msg("[MegaChaos] Player size restored.");
             }
         }
     }

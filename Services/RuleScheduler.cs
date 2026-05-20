@@ -91,6 +91,9 @@ internal static class RuleScheduler
         {
             rule.Reset(gameTime ?? 0f);
         }
+        // Reset chaos timer and clear any running effects on new run
+        _chaosTimer = 0f;
+        Chaos.ChaosEngine.Instance.ClearAllEffects();
     }
 
     public static void HandleStageStarted(float now)
@@ -136,6 +139,9 @@ internal static class RuleScheduler
                 TryGrant(state, gameTimeOverride: gameTime ?? now);
             }
         }
+        // New stage: reset chaos timer and stop running effects so they don't bleed between stages
+        _chaosTimer = 0f;
+        Chaos.ChaosEngine.Instance.ClearAllEffects();
     }
 
     public static void Tick(float now)
@@ -167,7 +173,8 @@ internal static class RuleScheduler
         int deltaLevel = currentLevel - _lastLevel;
 
         var profile = ProfileManager.ActiveProfile;
-        if (profile != null && profile.ChaosEnabled)
+        // Only tick chaos when the game is actually running (gameTime != null means stage timer exists)
+        if (profile != null && profile.ChaosEnabled && gameTime.HasValue)
         {
             // Accumulate the scheduler tick interval, not the frame delta time.
             // Tick() is called once per CheckIntervalSeconds (default 1s), so we add that fixed amount.
@@ -178,7 +185,7 @@ internal static class RuleScheduler
                 Chaos.ChaosEngine.Instance.TriggerRandomEffect();
             }
         }
-        else
+        else if (profile == null || !profile.ChaosEnabled)
         {
             _chaosTimer = 0f; // Reset when chaos is off so it starts fresh next time it's enabled.
         }

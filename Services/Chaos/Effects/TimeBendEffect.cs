@@ -15,7 +15,7 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             _originalTimeScale = Time.timeScale;
             Time.timeScale = 3f;
-            MegaChaos.Main.Msg("[MegaChaos] Zaman hizlandirildi!");
+            MegaChaos.Main.Msg("[MegaChaos] Time accelerated!");
         }
 
         public void OnUpdate(float deltaTime) { }
@@ -24,7 +24,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             Time.timeScale = _originalTimeScale;
-            MegaChaos.Main.Msg("[MegaChaos] Zaman normale dondu.");
+            MegaChaos.Main.Msg("[MegaChaos] Time back to normal.");
         }
     }
 }

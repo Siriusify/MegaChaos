@@ -34,7 +34,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 _playerTransform.localScale = _originalScale * s;
                 MegaChaos.Main.Msg($"[MiniMode] scale x{s:F2}");
             }
-            NotificationService.Show("KÜÇÜLDÜN! Etraf devasa görünüyor!", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("YOU SHRUNK! Everything looks huge!", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float dt) { }
@@ -44,7 +44,7 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             if (_playerTransform != null)
                 _playerTransform.localScale = _originalScale;
-            NotificationService.Show("Normale döndün, rahat bir nefes!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Back to normal size, take a breath!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

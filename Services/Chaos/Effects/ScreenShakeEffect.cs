@@ -21,7 +21,7 @@ namespace MegaChaos.Services.Chaos.Effects
             _intensity = Random.Range(0.10f, 0.50f);
             _freqX     = Random.Range(15f, 35f);
             _freqY     = Random.Range(10f, 25f);
-            NotificationService.Show("DEPREM! Zemin kayıyor!", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("EARTHQUAKE! The ground is shaking!", null, NotificationService.NotificationType.Warning);
             MegaChaos.Main.Msg($"[Deprem] intensity={_intensity:F2} freqX={_freqX:F1} freqY={_freqY:F1}");
         }
 
@@ -42,7 +42,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             CameraEffectStack.Unregister(Id);
-            NotificationService.Show("Deprem durdu, nefes alabilirsin!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Earthquake stopped, you can breathe now!", null, NotificationService.NotificationType.Reward);
         }
     }
 }

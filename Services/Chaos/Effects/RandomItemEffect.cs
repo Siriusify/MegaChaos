@@ -51,7 +51,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     var c = GameReflection.InvokeInstance(itemInv, "GetAmount", new[] { eItemType }, v);
                     if (c != null && Convert.ToInt32(c) > 0) owned.Add(v);
                 }
-                if (owned.Count == 0) { NotificationService.Show("Çekiliş: Alınacak item yok!", null, NotificationService.NotificationType.Unlucky); return; }
+                if (owned.Count == 0) { NotificationService.Show("Item Lottery: Nothing to take!", null, NotificationService.NotificationType.Unlucky); return; }
                 var pick = owned[_rng.Next(owned.Count)];
                 int removeCount = Math.Min(count, Convert.ToInt32(GameReflection.InvokeInstance(itemInv, "GetAmount", new[] { eItemType }, pick)));
                 for (int i = 0; i < removeCount; i++)

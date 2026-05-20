@@ -23,7 +23,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 var managerType = GameReflection.FindType("PickupManager");
                 if (managerType == null)
                 {
-                    NotificationService.Show("EXP Süpürge: Sistem bulunamadı.", null, NotificationService.NotificationType.Unlucky);
+                    NotificationService.Show("EXP Vacuum: System not found.", null, NotificationService.NotificationType.Unlucky);
                     return;
                 }
 
@@ -37,18 +37,18 @@ namespace MegaChaos.Services.Chaos.Effects
                 if (instance != null)
                 {
                     GameReflection.InvokeInstance(instance, "PickupAllXp", Type.EmptyTypes);
-                    NotificationService.Show("EXP Süpürge: Tüm XP'ler sana doğru çekiliyor! 🌀", null, NotificationService.NotificationType.Reward);
+                    NotificationService.Show("EXP Vacuum: All XP pulled towards you! 🌀", null, NotificationService.NotificationType.Reward);
                     MegaChaos.Main.Msg("[ExpCleaner] Invoked PickupManager.Instance.PickupAllXp successfully.");
                 }
                 else
                 {
-                    NotificationService.Show("EXP Süpürge: Aktif yönetici bulunamadı.", null, NotificationService.NotificationType.Unlucky);
+                    NotificationService.Show("EXP Vacuum: Active manager not found.", null, NotificationService.NotificationType.Unlucky);
                 }
             }
             catch (Exception ex)
             {
-                MegaChaos.Main.Error("[ExpCleaner] Hata: " + ex.Message + "\n" + ex.StackTrace);
-                NotificationService.Show("EXP Süpürge başarısız oldu.", null, NotificationService.NotificationType.Unlucky);
+                MegaChaos.Main.Error("[ExpCleaner] Error: " + ex.Message + "\n" + ex.StackTrace);
+                NotificationService.Show("EXP Vacuum failed.", null, NotificationService.NotificationType.Unlucky);
             }
         }
 

@@ -24,7 +24,7 @@ namespace MegaChaos.Services.Chaos.Effects
             _frozen = false;
             _freezeRemaining = 0f;
             _ScheduleNextFreeze();
-            NotificationService.Show("Bağlantı sorunu! Ping: 999ms", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("Connection issues! Ping: 999ms", null, NotificationService.NotificationType.Warning);
         }
 
         private void _ScheduleNextFreeze()
@@ -79,7 +79,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 Time.timeScale = _originalTimeScale;
                 _frozen = false;
             }
-            NotificationService.Show("Bağlantı normale döndü! Ping: 12ms", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Connection restored! Ping: 12ms", null, NotificationService.NotificationType.Reward);
         }
     }
 }

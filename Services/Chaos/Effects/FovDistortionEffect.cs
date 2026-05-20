@@ -15,7 +15,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnStart()
         {
             _timer = 0f;
-            NotificationService.Show("Baş dönüyor...", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("Head spinning...", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float deltaTime)
@@ -34,7 +34,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             CameraEffectStack.Unregister(Id);
-            NotificationService.Show("Mide bulantısı geçti.", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Nausea gone.", null, NotificationService.NotificationType.Reward);
         }
     }
 }

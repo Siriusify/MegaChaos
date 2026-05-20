@@ -15,7 +15,7 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             _originalTimeScale = Time.timeScale;
             Time.timeScale = Random.Range(0.15f, 0.30f);
-            NotificationService.Show("Zaman yavaşladı...", null, NotificationService.NotificationType.Warning);
+            NotificationService.Show("Time slowed down...", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float deltaTime) { }
@@ -24,7 +24,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd()
         {
             Time.timeScale = _originalTimeScale;
-            NotificationService.Show("Zaman normale döndü!", null, NotificationService.NotificationType.Reward);
+            NotificationService.Show("Time back to normal!", null, NotificationService.NotificationType.Reward);
         }
     }
 }
