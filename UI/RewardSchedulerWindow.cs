@@ -2360,7 +2360,7 @@ internal sealed class RewardSchedulerWindow
 
     private void HandleSearchKeyboardInput()
     {
-        if (!_searchFieldActive && !_itemSearchFieldActive)
+        if (!_searchFieldActive && !_itemSearchFieldActive && !_profileDialogOpen)
             return;
 
         var currentEvent = Event.current;
