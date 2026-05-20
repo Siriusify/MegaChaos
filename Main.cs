@@ -63,11 +63,15 @@ public sealed class Main : MelonMod
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.CantAttackEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.OneHitKOEffect());
 
-        // Hata ayıklama penceresini (F9) başlat
-        _chaosDebugWindow = new ChaosDebugWindow();
+        if (DebugLoggingEnabled)
+        {
+            _chaosDebugWindow = new ChaosDebugWindow();
+        }
 
         var harmony = new HarmonyLib.Harmony(Constants.GUID);
         PatchStartNewMap(harmony);
+
+        SyncChaosEngine();
 
         Msg($"Loaded {Constants.MODNAME} v{Constants.VERSION}");
     }
@@ -101,6 +105,13 @@ public sealed class Main : MelonMod
 
         ConfigService.ClampValues();
         RuleScheduler.ReloadRules();
+        SyncChaosEngine();
+    }
+
+    private void SyncChaosEngine()
+    {
+        ChaosEngine.Instance.IsRunning = ConfigService.ChaosModeEnabled.Value;
+        ChaosEngine.Instance.TriggerInterval = ConfigService.ChaosModeInterval.Value;
     }
 
     public override void OnPreferencesLoaded()

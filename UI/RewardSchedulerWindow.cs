@@ -385,6 +385,32 @@ internal sealed class RewardSchedulerWindow
             _profileDialogText = ProfileManager.ActiveProfile?.Name ?? "";
             _profileDialogOpen = true;
         }
+        cursorX += 60f;
+
+        // Chaos Settings
+        var isChaosOn = ConfigService.ChaosModeEnabled.Value;
+        var chaosStyle = isChaosOn ? _accentButtonStyle : _buttonStyle;
+        if (GUI.Button(new Rect(cursorX, buttonY, 130, 46), isChaosOn ? "CHAOS: ON" : "CHAOS: OFF", chaosStyle))
+        {
+            ConfigService.ChaosModeEnabled.Value = !isChaosOn;
+            MelonLoader.MelonPreferences.Save();
+        }
+        cursorX += 140f;
+
+        // Chaos Interval
+        if (isChaosOn)
+        {
+            GUI.Label(new Rect(cursorX, buttonY + 2, 70, 20), "Interval:", _cellStyle);
+            var newIntervalStr = GUI.TextField(new Rect(cursorX, buttonY + 24, 60, 22), ConfigService.ChaosModeInterval.Value.ToString(), _dropdownStyle);
+            if (float.TryParse(newIntervalStr, out float newInterval) && newInterval >= 5f)
+            {
+                if (Mathf.Abs(newInterval - ConfigService.ChaosModeInterval.Value) > 0.1f)
+                {
+                    ConfigService.ChaosModeInterval.Value = newInterval;
+                    MelonLoader.MelonPreferences.Save();
+                }
+            }
+        }
     }
 
     private void SwitchProfile(string profileId)
