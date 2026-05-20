@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_packetloss";
         public string Name => "Packet Loss";
         public string Description => "Bağlantın kesiliyormuş gibi oyun rastgele donuyor!";
-        public float DefaultDuration => 15f;
+        public float DefaultDuration => 30f;
 
         private float _nextFreezeIn;
         private float _freezeRemaining;

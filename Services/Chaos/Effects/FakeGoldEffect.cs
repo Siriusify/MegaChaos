@@ -1,127 +1,110 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace MegaChaos.Services.Chaos.Effects
 {
+    /// <summary>
+    /// Tax Audit — Seizes gold (10-9999) and excess item stacks, returns them after 5 seconds.
+    /// </summary>
     public class FakeGoldEffect : IChaosEffect
     {
         public string Id => "effect_fakegold";
-        public string Name => "Tax Audit (Troll)";
-        public string Description => "Eşyalarınızı ve altınlarınızı gerçekten hacveder, süre bitince iade eder!";
+        public string Name => "Tax Audit";
+        public string Description => "Your gold and excess items are seized for 5 seconds, then returned.";
         public float DefaultDuration => 5f;
 
-        private int _originalGold;
         private int _goldSeized;
-        private Dictionary<object, int> _backedUpItems = new();
+        private readonly Dictionary<object, int> _seizedItems = new();
         private object _playerInventory;
         private object _itemInventory;
+        private Type _eItemType;
 
         public void OnStart()
         {
+            _goldSeized = 0;
+            _seizedItems.Clear();
+            _playerInventory = null;
+            _itemInventory = null;
+
             try
             {
-                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                // --- Resolve player references ---
+                var myPlayerType = GameReflection.FindType(
+                    "Il2CppAssets.Scripts.Actors.Player.MyPlayer",
+                    "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
                 var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
                 _playerInventory = GameReflection.GetMember(player, "inventory");
-                _itemInventory = GameReflection.GetMember(_playerInventory, "itemInventory");
-
-                _originalGold = RunStatService.GetGold();
-                
-                // 1. Altını rastgele %50-%95 arasında azalt (100'den fazlaysa)
-                if (_originalGold >= 100)
-                {
-                    float seizePct = UnityEngine.Random.Range(0.50f, 0.95f);
-                    _goldSeized = (int)(_originalGold * seizePct);
-                    GameReflection.InvokeInstance(_playerInventory, "ChangeGold", new[] { typeof(int) }, -_goldSeized);
-                    MegaChaos.Main.Msg($"[MegaChaos] Vergi: {_originalGold} gold'un %{(int)(seizePct*100)}'i ({_goldSeized}) haciz edildi.");
-                }
-                else
-                {
-                    _goldSeized = 0;
-                    MegaChaos.Main.Msg($"[MegaChaos] Vergi: Gold 100'den az ({_originalGold}), gold haczi atlandı.");
-                }
-
-                // 2. Eşyaları yedekle ve kaldır
-                // EItem enum değerlerini C# tarafında iterate ediyoruz — bu sayede
-                // IL2CPP sarmalama sorunu olmadan doğru tip eşleşmesi sağlanıyor.
-                _backedUpItems.Clear();
-
-                var eItemType = GameReflection.FindType(
+                _itemInventory   = GameReflection.GetMember(_playerInventory, "itemInventory");
+                _eItemType       = GameReflection.FindType(
                     "Il2CppAssets.Scripts.Inventory__Items__Pickups.Items.EItem",
-                    "Assets.Scripts.Inventory__Items__Pickups.Items.EItem",
-                    "EItem");
+                    "Assets.Scripts.Inventory__Items__Pickups.Items.EItem", "EItem");
 
-                if (eItemType != null)
+                // --- Seize gold ---
+                int currentGold = RunStatService.GetGold();
+                int target = UnityEngine.Random.Range(10, 10000); // 10–9999
+                _goldSeized = Math.Min(currentGold, target);
+                if (_goldSeized > 0)
+                    GameReflection.InvokeInstance(_playerInventory, "ChangeGold", new[] { typeof(int) }, -_goldSeized);
+
+                int remainingDebt = target - _goldSeized; // how much gold was still owed after taking all gold
+
+                // --- Seize excess item stacks (counts > 1, take all but 1) ---
+                // Only triggered when we couldn't cover the gold amount entirely
+                if (remainingDebt > 0 && _eItemType != null)
                 {
-                    foreach (var enumVal in Enum.GetValues(eItemType))
+                    foreach (var enumVal in Enum.GetValues(_eItemType))
                     {
-                        object countObj;
-                        try { countObj = GameReflection.InvokeInstance(_itemInventory, "GetAmount", new[] { eItemType }, enumVal); }
-                        catch { continue; }
-
-                        if (countObj == null) continue;
-                        int count = Convert.ToInt32(countObj);
-                        if (count <= 0) continue;
-
-                        _backedUpItems[enumVal] = count;
-                        MegaChaos.Main.Msg($"[MegaChaos] Haciz: {enumVal} x{count}");
-
-                        // RemoveItem(EItem eItem, bool removeAll=false) → her çağrı 1 adet siler
-                        for (int i = 0; i < count; i++)
+                        try
                         {
-                            try { GameReflection.InvokeInstance(_itemInventory, "RemoveItem", new[] { eItemType, typeof(bool) }, enumVal, false); }
-                            catch { break; }
+                            var countObj = GameReflection.InvokeInstance(_itemInventory, "GetAmount", new[] { _eItemType }, enumVal);
+                            if (countObj == null) continue;
+                            int count = Convert.ToInt32(countObj);
+                            if (count <= 1) continue; // keep at least 1
+
+                            int toSeize = count - 1; // take all but 1
+                            _seizedItems[enumVal] = toSeize;
+                            for (int i = 0; i < toSeize; i++)
+                                GameReflection.InvokeInstance(_itemInventory, "RemoveItem", new[] { _eItemType, typeof(bool) }, enumVal, false);
                         }
+                        catch { }
                     }
                 }
 
-                NotificationService.Show($"-{_originalGold} Gold (Vergi Cezası Kesildi!)", null, NotificationService.NotificationType.Unlucky);
-                NotificationService.Show("Haciz İşlemi: Bütün eşyalarınıza el konuldu!", null, NotificationService.NotificationType.Warning);
-                MegaChaos.Main.Msg($"[MegaChaos] Vergi Denetimi başladı. {_originalGold} gold ve {_backedUpItems.Count} farklı eşya türü haczedildi.");
+                NotificationService.Show($"TAX AUDIT! -{_goldSeized} Gold seized! Returns in 5s...", null, NotificationService.NotificationType.Unlucky);
+                Main.Msg($"[TaxAudit] Seized {_goldSeized} gold, {_seizedItems.Count} item types. (fake, returns on end)");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                MegaChaos.Main.Error("OnStart Hatası: " + ex.Message + "\n" + ex.StackTrace);
+                Main.Error("[TaxAudit] OnStart: " + ex.Message + "\n" + ex.StackTrace);
             }
         }
-        
-        public void OnUpdate(float deltaTime) { }
+
+        public void OnUpdate(float dt) { }
         public void OnGUI() { }
-        
-        public void OnEnd() 
-        { 
+
+        public void OnEnd()
+        {
             try
             {
+                // --- Return gold ---
                 if (_playerInventory != null && _goldSeized > 0)
-                {
-                    // 1. El konulan altını iade et
                     GameReflection.InvokeInstance(_playerInventory, "ChangeGold", new[] { typeof(int) }, _goldSeized);
-                }
 
-                if (_itemInventory != null)
+                // --- Return seized items ---
+                if (_itemInventory != null && _eItemType != null)
                 {
-                    var eItemType = GameReflection.FindType(
-                        "Il2CppAssets.Scripts.Inventory__Items__Pickups.Items.EItem",
-                        "Assets.Scripts.Inventory__Items__Pickups.Items.EItem",
-                        "EItem");
-
-                    // 2. Eşyaları iade et
-                    foreach (var pair in _backedUpItems)
-                    {
-                        GameReflection.InvokeInstance(_itemInventory, "AddItem", new[] { eItemType, typeof(int) }, pair.Key, pair.Value);
-                    }
+                    foreach (var pair in _seizedItems)
+                        GameReflection.InvokeInstance(_itemInventory, "AddItem", new[] { _eItemType, typeof(int) }, pair.Key, pair.Value);
                 }
 
-                _backedUpItems.Clear();
-
-                NotificationService.Show("Şaka şaka, paran ve eşyaların yerinde duruyor!", null, NotificationService.NotificationType.Reward);
-                MegaChaos.Main.Msg("[MegaChaos] Vergi Denetimi bitti. Altınlar ve eşyalar iade edildi.");
+                _seizedItems.Clear();
+                NotificationService.Show("Just kidding! Gold & items returned.", null, NotificationService.NotificationType.Reward);
+                Main.Msg("[TaxAudit] All assets returned.");
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                MegaChaos.Main.Error("OnEnd Hatası: " + ex.Message + "\n" + ex.StackTrace);
+                Main.Error("[TaxAudit] OnEnd: " + ex.Message + "\n" + ex.StackTrace);
             }
         }
     }

@@ -16,7 +16,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_onehitko";
         public string Name => "One Hit KO";
         public string Description => "Herkes 1 HP'de kalır — ilk vuruş öldürür!";
-        public float DefaultDuration => 15f;
+        public float DefaultDuration => 30f;
 
         private object _playerHealth;
         private object _playerInventory;

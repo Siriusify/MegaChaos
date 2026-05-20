@@ -14,7 +14,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_randomstat";
         public string Name => "Stat Lottery";
         public string Description => "Rastgele bir stat geçici olarak değişir — Stats penceresinde görünür!";
-        public float DefaultDuration => 12f;
+        public float DefaultDuration => 30f;
 
         private static readonly System.Random _rng = new();
 

@@ -17,7 +17,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_nohud";
         public string Name => "No HUD";
         public string Description => "Can, XP, altın barları kaybolur — upgrade ekranları açık kalır!";
-        public float DefaultDuration => 12f;
+        public float DefaultDuration => 30f;
 
         // Kapatılacak bileşen tipleri (Assembly-CSharp'tan direkt)
         // Reflection kullanmak yerine tip isimleri string olarak tutulur,

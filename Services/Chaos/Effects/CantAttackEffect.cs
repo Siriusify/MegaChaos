@@ -12,7 +12,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_cantattack";
         public string Name => "Pacifist";
         public string Description => "Silahların bir süreliğine çalışmıyor — kaçmaktan başka seçeneğin yok!";
-        public float DefaultDuration => 8f;
+        public float DefaultDuration => 30f;
 
         private object _weaponInventory;
         private bool _applied;

@@ -8,7 +8,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_screenshake";
         public string Name => "Earthquake";
         public string Description => "Kamera şiddetle sallanır, zemin kayıyor gibi hissettiriri!";
-        public float DefaultDuration => 8f;
+        public float DefaultDuration => 30f;
 
         private float _elapsed;
         private float _intensity;

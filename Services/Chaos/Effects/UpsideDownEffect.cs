@@ -7,7 +7,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_upsidedown";
         public string Name => "Upside Down";
         public string Description => "Oyun dünyası tamamen ters yüz olur, kontrolleriniz birbirine girer!";
-        public float DefaultDuration => 20f;
+        public float DefaultDuration => 30f;
         
         private Camera _mainCamera;
 

@@ -11,7 +11,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_mirrorx";
         public string Name => "Mirror World";
         public string Description => "Ekranı yatay olarak aynalar! Kontroller düz ama gözün yanılır.";
-        public float DefaultDuration => 10f;
+        public float DefaultDuration => 30f;
 
         private Camera _cam;
         private Matrix4x4 _originalMatrix;
