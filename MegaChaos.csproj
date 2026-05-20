@@ -24,6 +24,9 @@
     <Reference Include="Il2CppSystem.Core">
       <HintPath>Libs\Il2CppSystem.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>Libs\Assembly-CSharp.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>Libs\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
@@ -49,6 +52,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="nothing.raw" />
+    <EmbeddedResource Include="dvdlogo.png" />
   </ItemGroup>
 
   <Target Name="CopyToThunderstoreDirectory" AfterTargets="Build">

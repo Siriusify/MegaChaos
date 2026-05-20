@@ -52,13 +52,33 @@ internal static class GameReflection
         return GetMemberValue(type, null, name);
     }
 
-    public static object GetMember(object instance, string name)
-    {
-        if (instance == null)
-            return null;
+        public static object GetMember(object instance, string name)
+        {
+            if (instance == null)
+                return null;
 
-        return GetMemberValue(instance.GetType(), instance, name);
-    }
+            return GetMemberValue(instance.GetType(), instance, name);
+        }
+
+        public static void SetMember(object instance, string name, object value)
+        {
+            if (instance == null) return;
+            var type = instance.GetType();
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.IgnoreCase;
+            
+            var property = type.GetProperty(name, flags);
+            if (property != null)
+            {
+                property.SetValue(instance, value);
+                return;
+            }
+            
+            var field = type.GetField(name, flags);
+            if (field != null)
+            {
+                field.SetValue(instance, value);
+            }
+        }
 
     public static MethodInfo FindAnyMethod(Type type, string methodName)
     {

@@ -157,34 +157,92 @@ internal static class RunStatService
         return 0;
     }
 
-    public static int GetLevel()
+    public static void SetGold(int amount)
     {
         try
         {
             var gameManagerType = GameReflection.FindType("GameManager", "Il2CppGameManager");
-            if (gameManagerType == null)
-                return 0;
+            if (gameManagerType == null) return;
 
             var gameManagerInstance = GameReflection.InvokeStatic(gameManagerType, "get_Instance", Type.EmptyTypes);
-            if (gameManagerInstance == null)
-                return 0;
+            if (gameManagerInstance == null) return;
 
             var myPlayer = GameReflection.GetMember(gameManagerInstance, "player");
-            if (myPlayer == null)
-                return 0;
+            if (myPlayer == null) return;
 
             var inventory = GameReflection.GetMember(myPlayer, "inventory");
-            if (inventory == null)
-                return 0;
+            if (inventory == null) return;
 
-            var levelValue = GameReflection.GetMember(inventory, "level") 
-                ?? GameReflection.GetMember(inventory, "playerLevel")
-                ?? GameReflection.GetMember(inventory, "currentLevel");
-            
-            if (levelValue != null)
-                return Convert.ToInt32(levelValue);
+            var fieldNames = new[] { "gold", "coins", "currency", "money", "materials" };
+            foreach (var name in fieldNames)
+            {
+                if (GameReflection.GetMember(inventory, name) != null)
+                {
+                    // IL2CPP convert
+                    GameReflection.SetMember(inventory, name, Convert.ChangeType(amount, GameReflection.GetMember(inventory, name).GetType()));
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Main.Error($"SetGold Failed: {ex.Message}");
+        }
+    }
 
-            return 0;
+    public static int GetLevel()
+    {
+        // Fast path: MyPlayer.Instance → inventory → playerXp → level
+        // (PlayerXp is at PlayerInventory.playerXp and has a 'level' int property)
+        try
+        {
+            var myPlayerType = GameReflection.FindType(
+                "Assets.Scripts.Actors.Player.MyPlayer",
+                "Il2CppAssets.Scripts.Actors.Player.MyPlayer",
+                "MyPlayer");
+
+            if (myPlayerType != null)
+            {
+                var playerInstance = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (playerInstance != null)
+                {
+                    var inventory = GameReflection.GetMember(playerInstance, "inventory");
+                    if (inventory != null)
+                    {
+                        // PlayerInventory.playerXp → PlayerXp.level
+                        var playerXp = GameReflection.GetMember(inventory, "playerXp");
+                        if (playerXp != null)
+                        {
+                            var lvl = GameReflection.GetMember(playerXp, "level");
+                            if (lvl != null) return Convert.ToInt32(lvl);
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // Fallback: GameManager path (legacy, kept for safety)
+        try
+        {
+            var gameManagerType = GameReflection.FindType("GameManager", "Il2CppGameManager");
+            if (gameManagerType == null) return 0;
+
+            var gameManagerInstance = GameReflection.InvokeStatic(gameManagerType, "get_Instance", Type.EmptyTypes);
+            if (gameManagerInstance == null) return 0;
+
+            var myPlayer = GameReflection.GetMember(gameManagerInstance, "player");
+            if (myPlayer == null) return 0;
+
+            var inventory = GameReflection.GetMember(myPlayer, "inventory");
+            if (inventory == null) return 0;
+
+            var playerXp = GameReflection.GetMember(inventory, "playerXp");
+            if (playerXp != null)
+            {
+                var lvl = GameReflection.GetMember(playerXp, "level");
+                if (lvl != null) return Convert.ToInt32(lvl);
+            }
         }
         catch { }
 
