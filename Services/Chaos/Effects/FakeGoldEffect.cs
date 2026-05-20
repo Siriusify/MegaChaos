@@ -100,6 +100,7 @@ namespace MegaChaos.Services.Chaos.Effects
 
                 _seizedItems.Clear();
                 NotificationService.Show("Just kidding! Gold & items returned.", null, NotificationService.NotificationType.Reward);
+                ChaosEngine.Instance.AddLogEntry("Tax Audit (It was fake!)");
                 Main.Msg("[TaxAudit] All assets returned.");
             }
             catch (Exception ex)

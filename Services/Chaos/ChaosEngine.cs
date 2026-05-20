@@ -65,6 +65,12 @@ namespace MegaChaos.Services.Chaos
             _log.Clear();
         }
 
+        public void AddLogEntry(string message)
+        {
+            _log.Insert(0, new ChaosLogEntry(message));
+            if (_log.Count > 100) _log.RemoveAt(_log.Count - 1);
+        }
+
         private void UpdateActiveEffects()
         {
             for (int i = _activeEffects.Count - 1; i >= 0; i--)

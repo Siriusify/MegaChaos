@@ -12,7 +12,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class GoldHeistEffect : IChaosEffect
     {
         public string Id => "effect_goldheist";
-        public string Name => "Gold Heist";
+        public string Name => "Tax Audit";
         public string Description => "Someone robbed you! Permanently loses 10–9999 gold (and excess items if short on gold).";
         public float DefaultDuration => 0f; // instant — nothing to undo
 
