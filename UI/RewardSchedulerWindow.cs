@@ -252,7 +252,7 @@ internal sealed class RewardSchedulerWindow
         catch (Exception ex)
         {
             _visible = false;
-            Main.Error($"UI disabled after error at {_uiStep}: {ex.GetBaseException().Message}");
+            Main.Error($"UI disabled after error at {_uiStep}:\n{ex.ToString()}");
         }
     }
 
@@ -360,33 +360,40 @@ internal sealed class RewardSchedulerWindow
 
         // Action buttons
         cursorX += 16f;
-        if (GUI.Button(new Rect(cursorX, buttonY, 36, 46), "+", _buttonStyle))
+        try
         {
-            _profileDialogMode = "create";
-            _profileDialogText = $"Profile {ProfileManager.Profiles.Count + 1}";
-            _profileDialogCursorPos = _profileDialogText.Length;
-            _profileDialogOpen = true;
-        }
-        cursorX += 40f;
-
-        if (ProfileManager.Profiles.Count > 1)
-        {
-            if (GUI.Button(new Rect(cursorX, buttonY, 36, 46), "-", _dangerButtonStyle))
+            if (GUI.Button(new Rect(cursorX, buttonY, 36, 46), "+", _buttonStyle))
             {
-                ProfileManager.DeleteProfile(activeProfileId);
-                LoadFromConfig();
-                RuleScheduler.ReloadRules();
-                _status = "Profile deleted.";
+                _profileDialogMode = "create";
+                _profileDialogText = $"Profile {ProfileManager.Profiles.Count + 1}";
+                _profileDialogCursorPos = _profileDialogText.Length;
+                _profileDialogOpen = true;
             }
             cursorX += 40f;
-        }
 
-        if (GUI.Button(new Rect(cursorX, buttonY, 46, 46), "Edit", _buttonStyle))
+            if (ProfileManager.Profiles.Count > 1)
+            {
+                if (GUI.Button(new Rect(cursorX, buttonY, 36, 46), "-", _dangerButtonStyle))
+                {
+                    ProfileManager.DeleteProfile(activeProfileId);
+                    LoadFromConfig();
+                    RuleScheduler.ReloadRules();
+                    _status = "Profile deleted.";
+                }
+                cursorX += 40f;
+            }
+
+            if (GUI.Button(new Rect(cursorX, buttonY, 46, 46), "Edit", _buttonStyle))
+            {
+                _profileDialogMode = "rename";
+                _profileDialogText = ProfileManager.ActiveProfile?.Name ?? "";
+                _profileDialogCursorPos = _profileDialogText.Length;
+                _profileDialogOpen = true;
+            }
+        }
+        catch (Exception ex)
         {
-            _profileDialogMode = "rename";
-            _profileDialogText = ProfileManager.ActiveProfile?.Name ?? "";
-            _profileDialogCursorPos = _profileDialogText.Length;
-            _profileDialogOpen = true;
+            Main.Error($"DrawToolbar Buttons Exception:\n{ex.ToString()}");
         }
     }
 
@@ -402,44 +409,51 @@ internal sealed class RewardSchedulerWindow
 
     private void DrawProfileDialog()
     {
-        var overlayRect = new Rect(_windowRect.x, _windowRect.y, _windowRect.width, _windowRect.height);
-        var oldColor = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.45f);
-        GUI.DrawTexture(overlayRect, Texture2D.whiteTexture);
-        GUI.color = oldColor;
-
-        var dialogWidth = 400f;
-        var dialogHeight = 200f;
-        var dialogRect = new Rect(
-            _windowRect.x + (_windowRect.width - dialogWidth) / 2f,
-            _windowRect.y + (_windowRect.height - dialogHeight) / 2f,
-            dialogWidth,
-            dialogHeight
-        );
-
-        var title = _profileDialogMode == "create" ? "CREATE PROFILE" : "RENAME PROFILE";
-        DrawCard(dialogRect.x, dialogRect.y, dialogRect.width, dialogRect.height, title);
-
-        var fieldX = dialogRect.x + 30f;
-        var fieldY = dialogRect.y + 70f;
-        GUI.Label(new Rect(fieldX, fieldY, dialogWidth - 60, 28), "Profile Name:", _cellStyle);
-        
-        var inputRect = new Rect(fieldX, fieldY + 30, dialogWidth - 60, 36);
-        GUI.Label(inputRect, _profileDialogText, _dropdownStyle);
-        if (_profileDialogOpen) DrawTextCursor(inputRect, _profileDialogText, _profileDialogCursorPos, _cellStyle);
-
-        var footerY = dialogRect.y + dialogRect.height - 56f;
-        if (GUI.Button(new Rect(dialogRect.x + dialogRect.width - 236f, footerY, 102f, 36f), "CANCEL", _buttonStyle))
+        try
         {
-            _profileDialogOpen = false;
+            var overlayRect = new Rect(_windowRect.x, _windowRect.y, _windowRect.width, _windowRect.height);
+            var oldColor = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.45f);
+            GUI.DrawTexture(overlayRect, Texture2D.whiteTexture);
+            GUI.color = oldColor;
+
+            var dialogWidth = 400f;
+            var dialogHeight = 200f;
+            var dialogRect = new Rect(
+                _windowRect.x + (_windowRect.width - dialogWidth) / 2f,
+                _windowRect.y + (_windowRect.height - dialogHeight) / 2f,
+                dialogWidth,
+                dialogHeight
+            );
+
+            var title = _profileDialogMode == "create" ? "CREATE PROFILE" : "RENAME PROFILE";
+            DrawCard(dialogRect.x, dialogRect.y, dialogRect.width, dialogRect.height, title);
+
+            var fieldX = dialogRect.x + 30f;
+            var fieldY = dialogRect.y + 70f;
+            GUI.Label(new Rect(fieldX, fieldY, dialogWidth - 60, 28), "Profile Name:", _cellStyle);
+            
+            var inputRect = new Rect(fieldX, fieldY + 30, dialogWidth - 60, 36);
+            GUI.Label(inputRect, _profileDialogText, _dropdownStyle);
+            if (_profileDialogOpen) DrawTextCursor(inputRect, _profileDialogText, _profileDialogCursorPos, _cellStyle);
+
+            var footerY = dialogRect.y + dialogRect.height - 56f;
+            if (GUI.Button(new Rect(dialogRect.x + dialogRect.width - 236f, footerY, 102f, 36f), "CANCEL", _buttonStyle))
+            {
+                _profileDialogOpen = false;
+            }
+            if (GUI.Button(new Rect(dialogRect.x + dialogRect.width - 122f, footerY, 102f, 36f), "SAVE", _accentButtonStyle))
+            {
+                if (_profileDialogMode == "create")
+                    ProfileManager.CreateProfile(_profileDialogText);
+                else
+                    ProfileManager.RenameProfile(ProfileManager.ActiveProfile?.Id, _profileDialogText);
+                _profileDialogOpen = false;
+            }
         }
-        if (GUI.Button(new Rect(dialogRect.x + dialogRect.width - 122f, footerY, 102f, 36f), "SAVE", _accentButtonStyle))
+        catch (Exception ex)
         {
-            if (_profileDialogMode == "create")
-                ProfileManager.CreateProfile(_profileDialogText);
-            else
-                ProfileManager.RenameProfile(ProfileManager.ActiveProfile?.Id, _profileDialogText);
-            _profileDialogOpen = false;
+            Main.Error($"DrawProfileDialog Exception:\n{ex.ToString()}");
         }
     }
 
