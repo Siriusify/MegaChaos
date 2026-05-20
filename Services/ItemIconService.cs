@@ -36,7 +36,7 @@ internal static class ItemIconService
 
         string key = itemName.ToLowerInvariant();
         
-        if (key == "none")
+        if (key == "none" || key.StartsWith("chaos"))
         {
             if (IconCache.TryGetValue(key, out var noneCached))
                 return noneCached;

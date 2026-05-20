@@ -28,6 +28,31 @@ internal static class ItemGrantService
             return true;
         }
 
+        if (itemName.StartsWith("Chaos", StringComparison.OrdinalIgnoreCase))
+        {
+            if (itemName.Equals("Chaos", StringComparison.OrdinalIgnoreCase))
+            {
+                MegaChaos.Services.Chaos.ChaosEngine.Instance.TriggerRandomEffect();
+            }
+            else if (itemName.StartsWith("Chaos:", StringComparison.OrdinalIgnoreCase))
+            {
+                var effectName = itemName.Substring(6).Trim();
+                var effect = System.Linq.Enumerable.FirstOrDefault(MegaChaos.Services.Chaos.ChaosEngine.Instance.AvailableEffects, 
+                    e => e.Name.Equals(effectName, StringComparison.OrdinalIgnoreCase));
+                
+                if (effect != null)
+                {
+                    MegaChaos.Services.Chaos.ChaosEngine.Instance.TriggerEffect(effect);
+                }
+                else
+                {
+                    Main.Warn($"Chaos effect '{effectName}' not found.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
         if (count <= 0)
             return false;
 

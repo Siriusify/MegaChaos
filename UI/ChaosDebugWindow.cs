@@ -45,23 +45,12 @@ namespace MegaChaos.UI
             // Engine Durumu
             float topY = _windowRect.y + 50;
             GUI.Label(new Rect(_windowRect.x + 10, topY, 150, 25), "Chaos Engine Status:");
-            string statusTxt = engine.IsRunning ? "<color=#00FF00>[RUNNING]</color>" : "<color=#FF0000>[STOPPED]</color>";
-            GUI.Label(new Rect(_windowRect.x + 160, topY, 100, 25), statusTxt);
+            string statusTxt = "<color=#00FF00>[ACTIVE VIA RULE]</color>";
+            GUI.Label(new Rect(_windowRect.x + 160, topY, 150, 25), statusTxt);
             
-            if (GUI.Button(new Rect(_windowRect.x + 240, topY, 100, 25), engine.IsRunning ? "Stop Engine" : "Start Engine"))
-            {
-                engine.IsRunning = !engine.IsRunning;
-            }
-
             if (GUI.Button(new Rect(_windowRect.x + 350, topY, 80, 25), "Clean"))
             {
                 engine.ClearAllEffects();
-            }
-
-            if (engine.IsRunning)
-            {
-                float remaining = Mathf.Max(0, engine.TriggerInterval - engine.TimeSinceLastTrigger);
-                GUI.Label(new Rect(_windowRect.x + 160, topY + 25, 250, 25), $"Next trigger in: {remaining:F1}s");
             }
 
             topY += 50;

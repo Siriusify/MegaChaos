@@ -21,18 +21,10 @@ namespace MegaChaos.Services.Chaos
         
         private List<ActiveEffectState> _activeEffects = new List<ActiveEffectState>();
 
-        public float TriggerInterval { get; set; } = 30f; // Varsayılan 30 saniye
-        public bool IsRunning { get; set; } = false;
-
-        public float TimeSinceLastTrigger { get; private set; } = 0f;
-
         public void Update()
         {
             UpdateActiveEffects();
             CameraEffectStack.Apply(); // tüm kamera delta'larını topla ve uygula
-
-            if (!IsRunning) return;
-            UpdateTimer();
         }
 
         public void OnGUI()
@@ -76,16 +68,6 @@ namespace MegaChaos.Services.Chaos
             }
         }
 
-        private void UpdateTimer()
-        {
-            TimeSinceLastTrigger += Time.unscaledDeltaTime;
-            if (TimeSinceLastTrigger >= TriggerInterval)
-            {
-                TimeSinceLastTrigger = 0f;
-                TriggerRandomEffect();
-            }
-        }
-
         public void RegisterEffect(IChaosEffect effect)
         {
             if (!_availableEffects.Contains(effect))
@@ -108,8 +90,8 @@ namespace MegaChaos.Services.Chaos
         {
             float durationToUse = customDuration == -2f ? effect.DefaultDuration : customDuration;
 
-            // TODO: UI üzerinden oyuncuya bildirim gönder
             MegaChaos.Main.Msg($"[MegaChaos] Triggering Effect: {effect.Name} (Duration: {durationToUse})");
+            MegaChaos.Services.NotificationService.Show($"CHAOS: {effect.Name}!", null, MegaChaos.Services.NotificationService.NotificationType.Warning);
             
             effect.OnStart();
 
