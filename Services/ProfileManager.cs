@@ -11,6 +11,8 @@ public class RuleProfile
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string Name { get; set; } = "Default";
     public string Rules { get; set; } = string.Empty;
+    public bool ChaosEnabled { get; set; } = false;
+    public float ChaosInterval { get; set; } = 30f;
 }
 
 public class ProfileDataStore

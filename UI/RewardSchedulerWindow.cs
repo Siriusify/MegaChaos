@@ -390,6 +390,33 @@ internal sealed class RewardSchedulerWindow
                 _profileDialogCursorPos = _profileDialogText.Length;
                 _profileDialogOpen = true;
             }
+            cursorX += 56f;
+
+            // Chaos Settings
+            var activeProfile = ProfileManager.ActiveProfile;
+            if (activeProfile != null)
+            {
+                var isChaosOn = activeProfile.ChaosEnabled;
+                var chaosStyle = isChaosOn ? _accentButtonStyle : _buttonStyle;
+                if (GUI.Button(new Rect(cursorX, buttonY, 130, 46), isChaosOn ? "CHAOS: ON" : "CHAOS: OFF", chaosStyle))
+                {
+                    activeProfile.ChaosEnabled = !isChaosOn;
+                    ProfileManager.Save();
+                }
+                cursorX += 140f;
+
+                if (isChaosOn)
+                {
+                    GUI.Label(new Rect(cursorX, buttonY + 2, 70, 20), "Interval:", _cellStyle);
+                    int currentInterval = (int)activeProfile.ChaosInterval;
+                    DrawNumericValueBox(ref currentInterval, new Rect(cursorX, buttonY + 24, 60, 22), 5, 9999, "chaos_interval");
+                    if (currentInterval != (int)activeProfile.ChaosInterval)
+                    {
+                        activeProfile.ChaosInterval = currentInterval;
+                        ProfileManager.Save();
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -434,8 +461,10 @@ internal sealed class RewardSchedulerWindow
             GUI.Label(new Rect(fieldX, fieldY, dialogWidth - 60, 28), "Profile Name:", _cellStyle);
             
             var inputRect = new Rect(fieldX, fieldY + 30, dialogWidth - 60, 36);
-            GUI.Label(inputRect, _profileDialogText, _dropdownStyle);
-            if (_profileDialogOpen) DrawTextCursor(inputRect, _profileDialogText, _profileDialogCursorPos, _cellStyle);
+            GUI.Box(inputRect, string.Empty, _frameStyle);
+            var labelRect = new Rect(inputRect.x + 8, inputRect.y + 8, inputRect.width - 16, inputRect.height - 16);
+            GUI.Label(labelRect, _profileDialogText, _valueStyle);
+            if (_profileDialogOpen) DrawTextCursor(labelRect, _profileDialogText, _profileDialogCursorPos, _valueStyle);
 
             var footerY = dialogRect.y + dialogRect.height - 56f;
             if (GUI.Button(new Rect(dialogRect.x + dialogRect.width - 236f, footerY, 102f, 36f), "CANCEL", _buttonStyle))

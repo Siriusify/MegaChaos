@@ -14,6 +14,7 @@ internal static class RuleScheduler
     private static int _lastGold;
     private static int _lastLevel;
     private static float? _lastGameTime;
+    private static float _chaosTimer;
 
     public static IReadOnlyList<RuleState> GetRuleStates() => Rules;
 
@@ -164,6 +165,17 @@ internal static class RuleScheduler
         int deltaBossKills = currentBossKills - _lastBossKills;
         int deltaGold = currentGold - _lastGold;
         int deltaLevel = currentLevel - _lastLevel;
+
+        var profile = ProfileManager.ActiveProfile;
+        if (profile != null && profile.ChaosEnabled)
+        {
+            _chaosTimer += Time.unscaledDeltaTime; // Unscaled so it's consistent with game logic, but pauses when game is paused.
+            if (_chaosTimer >= profile.ChaosInterval)
+            {
+                _chaosTimer = 0f;
+                Chaos.ChaosEngine.Instance.TriggerRandomEffect();
+            }
+        }
 
         // Log gold and health for debugging
         if (deltaGold != 0 || currentGold > 0)
