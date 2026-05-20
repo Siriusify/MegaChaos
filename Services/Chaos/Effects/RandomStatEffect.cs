@@ -12,7 +12,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class RandomStatEffect : IChaosEffect
     {
         public string Id => "effect_randomstat";
-        public string Name => "İstatistik Çekiliş";
+        public string Name => "Stat Lottery";
         public string Description => "Rastgele bir stat geçici olarak değişir — Stats penceresinde görünür!";
         public float DefaultDuration => 12f;
 

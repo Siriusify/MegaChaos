@@ -7,7 +7,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class LowGravityEffect : IChaosEffect
     {
         public string Id => "effect_lowgravity";
-        public string Name => "Düşük Yerçekimi";
+        public string Name => "Low Gravity";
         public string Description => "Neredeyse sıfır yerçekimi — uçuyor gibi hissedersin!";
         public float DefaultDuration => 12f;
 

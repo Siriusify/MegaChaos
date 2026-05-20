@@ -15,7 +15,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class NoHudEffect : IChaosEffect
     {
         public string Id => "effect_nohud";
-        public string Name => "HUD Yok";
+        public string Name => "No HUD";
         public string Description => "Can, XP, altın barları kaybolur — upgrade ekranları açık kalır!";
         public float DefaultDuration => 12f;
 

@@ -5,7 +5,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class SlowMotionEffect : IChaosEffect
     {
         public string Id => "effect_slowmotion";
-        public string Name => "Mermi Zamanı";
+        public string Name => "Bullet Time";
         public string Description => "Zaman ağır çekime geçer — her şey yavaşlar!";
         public float DefaultDuration => 6f;
 

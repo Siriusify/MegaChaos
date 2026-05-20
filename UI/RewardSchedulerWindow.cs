@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using MegaChaos.Services.Chaos;
 
 using MegaChaos.Services;
 
@@ -188,6 +189,8 @@ internal sealed class RewardSchedulerWindow
     private bool _draggingMain;
     private Vector2 _dragOffset;
     private static bool _visualsReady;
+    private int _activeTab = 0; // 0 = Rules, 1 = Chaos
+    private Vector2 _chaosLogScrollPos;
     private static readonly string ExportPath = Path.Combine(
         MelonLoader.Utils.MelonEnvironment.UserDataDirectory,
         Constants.MODNAME,
@@ -259,28 +262,39 @@ internal sealed class RewardSchedulerWindow
     private void DrawMainWindow()
     {
         DrawRoundedRect(_windowRect, _panelStyle);
-        
-        
+
         var headerHeight = 54f;
         var headerRect = new Rect(_windowRect.x, _windowRect.y, _windowRect.width, headerHeight);
         DrawRoundedRect(headerRect, _headerStyle);
-        
-        
         GUI.Label(new Rect(_windowRect.x + 22, _windowRect.y + 12, 520, 30), "MEGA CHAOS", _titleStyle);
-
-        var x = _windowRect.x + 28;
-        var y = _windowRect.y + 74;
-        var width = _windowRect.width - 56;
-
-        GUI.enabled = !_editorOpen && !_triggerDropdownVisible && !_itemDropdownVisible && !_profileDialogOpen;
 
         if (GUI.Button(new Rect(_windowRect.x + _windowRect.width - 58, _windowRect.y + 8, 34, 34), "X", _closeButtonStyle))
             _visible = false;
 
-        DrawToolbar(x, y, width);
-        y += 72;
+        // Tab buttons
+        var tabY = _windowRect.y + 60f;
+        var tabX = _windowRect.x + 28f;
+        if (GUI.Button(new Rect(tabX, tabY, 100, 32), "Rules", _activeTab == 0 ? _accentButtonStyle : _buttonStyle))
+            _activeTab = 0;
+        if (GUI.Button(new Rect(tabX + 108, tabY, 100, 32), "Chaos", _activeTab == 1 ? _accentButtonStyle : _buttonStyle))
+            _activeTab = 1;
 
-        DrawRulesCard(x, y, width, _windowRect.height - (y - _windowRect.y) - 24);
+        var x = _windowRect.x + 28;
+        var y = _windowRect.y + 102f;
+        var width = _windowRect.width - 56;
+
+        GUI.enabled = !_editorOpen && !_triggerDropdownVisible && !_itemDropdownVisible && !_profileDialogOpen;
+
+        if (_activeTab == 0)
+        {
+            DrawToolbar(x, y, width);
+            y += 60f;
+            DrawRulesCard(x, y, width, _windowRect.height - (y - _windowRect.y) - 24);
+        }
+        else if (_activeTab == 1)
+        {
+            DrawChaosTab(x, y, width, _windowRect.height - (y - _windowRect.y) - 24);
+        }
 
         GUI.enabled = true;
 
@@ -332,6 +346,85 @@ internal sealed class RewardSchedulerWindow
             GUI.Label(new Rect(x, _windowRect.y + _windowRect.height - 26, width - 30, 20), _status, _statusStyle);
     }
 
+    private void DrawChaosTab(float x, float y, float width, float height)
+    {
+        var profile = ProfileManager.ActiveProfile;
+        if (profile == null) return;
+
+        float settingsWidth = width * 0.22f;
+        float logWidth = width - settingsWidth - 12f;
+
+        // ---- Left Panel: Settings ----
+        DrawCard(x, y, settingsWidth, height, "Settings");
+        var sx = x + 14f;
+        var sy = y + 42f;
+        var fieldW = settingsWidth - 28f;
+
+        // Enable toggle
+        var enableStyle = profile.ChaosEnabled ? _accentButtonStyle : _buttonStyle;
+        var enableLabel = profile.ChaosEnabled ? "CHAOS: ON" : "CHAOS: OFF";
+        if (GUI.Button(new Rect(sx, sy, fieldW, 36), enableLabel, enableStyle))
+        {
+            profile.ChaosEnabled = !profile.ChaosEnabled;
+            if (!profile.ChaosEnabled) ChaosEngine.Instance.ClearAllEffects();
+            ProfileManager.Save();
+        }
+        sy += 46f;
+
+        // Interval
+        GUI.Label(new Rect(sx, sy, fieldW, 20), "Interval (sec)", _mutedStyle);
+        sy += 22f;
+        int intervalVal = (int)profile.ChaosInterval;
+        DrawNumericValueBox(ref intervalVal, new Rect(sx, sy, fieldW, 30), 5, 9999, "chaos_interval");
+        if (intervalVal != (int)profile.ChaosInterval) { profile.ChaosInterval = intervalVal; ProfileManager.Save(); }
+        sy += 38f;
+
+        // Duration multiplier
+        GUI.Label(new Rect(sx, sy, fieldW, 20), "Duration Multiplier", _mutedStyle);
+        sy += 22f;
+        // We store as float but edit as integer *10 to show 1 decimal (e.g. 15 = 1.5x)
+        int multX10 = (int)Math.Round(profile.ChaosDurationMultiplier * 10f);
+        DrawNumericValueBox(ref multX10, new Rect(sx, sy, fieldW, 30), 1, 100, "chaos_mult");
+        float newMult = multX10 / 10f;
+        if (Math.Abs(newMult - profile.ChaosDurationMultiplier) > 0.01f) { profile.ChaosDurationMultiplier = newMult; ProfileManager.Save(); }
+        GUI.Label(new Rect(sx, sy + 32f, fieldW, 20), $"{newMult:F1}x duration", _mutedStyle);
+        sy += 58f;
+
+        // Clear log button
+        if (GUI.Button(new Rect(sx, sy, fieldW, 28), "Clear Log", _dangerButtonStyle))
+            ChaosEngine.Instance.ClearLog();
+
+        // ---- Right Panel: Log ----
+        float logX = x + settingsWidth + 12f;
+        DrawCard(logX, y, logWidth, height, "Effect Log");
+
+        var log = ChaosEngine.Instance.Log;
+        const float rowH = 26f;
+        float viewH = height - 50f;
+        float contentH = Math.Max(viewH, log.Count * rowH);
+
+        _chaosLogScrollPos = GUI.BeginScrollView(
+            new Rect(logX + 8, y + 42, logWidth - 16, viewH),
+            _chaosLogScrollPos,
+            new Rect(0, 0, logWidth - 36, contentH));
+
+        if (log.Count == 0)
+        {
+            GUI.Label(new Rect(8, 8, logWidth - 52, 28), "No effects triggered yet.", _mutedStyle);
+        }
+        else
+        {
+            for (int i = 0; i < log.Count; i++)
+            {
+                var entry = log[i];
+                GUI.Label(new Rect(8, i * rowH + 4, 80, rowH - 4), $"[{entry.Time}]", _mutedStyle);
+                GUI.Label(new Rect(92, i * rowH + 4, logWidth - 136, rowH - 4), entry.EffectName, _cellStyle);
+            }
+        }
+
+        GUI.EndScrollView();
+    }
+
     private void DrawToolbar(float x, float y, float width)
     {
         var buttonY = y;
@@ -352,13 +445,11 @@ internal sealed class RewardSchedulerWindow
             var isSelected = activeProfileId == profile.Id;
             var style = isSelected ? _accentButtonStyle : _buttonStyle;
             if (GUI.Button(new Rect(cursorX, buttonY, profileWidth, 46), profile.Name, style))
-            {
                 SwitchProfile(profile.Id);
-            }
             cursorX += profileWidth + 4;
         }
 
-        // Action buttons
+        // Profile action buttons
         cursorX += 16f;
         try
         {
@@ -389,33 +480,6 @@ internal sealed class RewardSchedulerWindow
                 _profileDialogText = ProfileManager.ActiveProfile?.Name ?? "";
                 _profileDialogCursorPos = _profileDialogText.Length;
                 _profileDialogOpen = true;
-            }
-            cursorX += 56f;
-
-            // Chaos Settings
-            var activeProfile = ProfileManager.ActiveProfile;
-            if (activeProfile != null)
-            {
-                var isChaosOn = activeProfile.ChaosEnabled;
-                var chaosStyle = isChaosOn ? _accentButtonStyle : _buttonStyle;
-                if (GUI.Button(new Rect(cursorX, buttonY, 130, 46), isChaosOn ? "CHAOS: ON" : "CHAOS: OFF", chaosStyle))
-                {
-                    activeProfile.ChaosEnabled = !isChaosOn;
-                    ProfileManager.Save();
-                }
-                cursorX += 140f;
-
-                if (isChaosOn)
-                {
-                    GUI.Label(new Rect(cursorX, buttonY + 2, 70, 20), "Interval:", _cellStyle);
-                    int currentInterval = (int)activeProfile.ChaosInterval;
-                    DrawNumericValueBox(ref currentInterval, new Rect(cursorX, buttonY + 24, 60, 22), 5, 9999, "chaos_interval");
-                    if (currentInterval != (int)activeProfile.ChaosInterval)
-                    {
-                        activeProfile.ChaosInterval = currentInterval;
-                        ProfileManager.Save();
-                    }
-                }
             }
         }
         catch (Exception ex)

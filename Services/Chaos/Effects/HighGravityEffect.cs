@@ -7,7 +7,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class HighGravityEffect : IChaosEffect
     {
         public string Id => "effect_highgravity";
-        public string Name => "Yüksek Yerçekimi";
+        public string Name => "High Gravity";
         public string Description => "Yerçekimi çılgınca artar — zıplamak imkansıza döner!";
         public float DefaultDuration => 10f;
 

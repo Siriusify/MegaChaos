@@ -12,7 +12,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class MobRainEffect : IChaosEffect
     {
         public string Id => "effect_mobrain";
-        public string Name => "Mob Yağmuru";
+        public string Name => "Mob Rain";
         public string Description => "Etrafa aniden çok sayıda düşman yağar!";
         public float DefaultDuration => 0f; // anlık
 

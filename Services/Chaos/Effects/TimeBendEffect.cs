@@ -5,7 +5,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class TimeBendEffect : IChaosEffect
     {
         public string Id => "effect_time_bend";
-        public string Name => "Zaman Bükülmesi";
+        public string Name => "Time Warp";
         public string Description => "Oyunun zaman akışı 3 kat hızlanır!";
         public float DefaultDuration => 20f;
 

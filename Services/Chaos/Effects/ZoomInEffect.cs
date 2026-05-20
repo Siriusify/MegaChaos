@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class ZoomInEffect : IChaosEffect
     {
         public string Id => "effect_zoomin";
-        public string Name => "Yakın Plan";
+        public string Name => "Zoom In";
         public string Description => "Kamera aniden çok yaklaşır, etraf görmek zorlaşır!";
         public float DefaultDuration => 8f;
 

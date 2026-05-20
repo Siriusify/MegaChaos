@@ -8,7 +8,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class MiniModeEffect : IChaosEffect
     {
         public string Id => "effect_minimode";
-        public string Name => "Küçülme İksiri";
+        public string Name => "Shrink Potion";
         public string Description => "Karakterin cüce olur! Her şey kocaman görünür.";
         public float DefaultDuration => 12f;
 

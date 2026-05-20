@@ -13,6 +13,7 @@ public class RuleProfile
     public string Rules { get; set; } = string.Empty;
     public bool ChaosEnabled { get; set; } = false;
     public float ChaosInterval { get; set; } = 30f;
+    public float ChaosDurationMultiplier { get; set; } = 1f;
 }
 
 public class ProfileDataStore

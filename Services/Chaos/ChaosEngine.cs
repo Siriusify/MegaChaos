@@ -1,8 +1,21 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace MegaChaos.Services.Chaos
 {
+    public class ChaosLogEntry
+    {
+        public string Time { get; }
+        public string EffectName { get; }
+
+        public ChaosLogEntry(string effectName)
+        {
+            Time = DateTime.Now.ToString("HH:mm:ss");
+            EffectName = effectName;
+        }
+    }
+
     public class ChaosEngine
     {
         public static ChaosEngine Instance { get; private set; } = new ChaosEngine();
@@ -11,7 +24,10 @@ namespace MegaChaos.Services.Chaos
 
         private List<IChaosEffect> _availableEffects = new List<IChaosEffect>();
         public IReadOnlyList<IChaosEffect> AvailableEffects => _availableEffects;
-        
+
+        private readonly List<ChaosLogEntry> _log = new List<ChaosLogEntry>();
+        public IReadOnlyList<ChaosLogEntry> Log => _log;
+
         private class ActiveEffectState
         {
             public IChaosEffect Effect;
@@ -24,7 +40,7 @@ namespace MegaChaos.Services.Chaos
         public void Update()
         {
             UpdateActiveEffects();
-            CameraEffectStack.Apply(); // tüm kamera delta'larını topla ve uygula
+            CameraEffectStack.Apply();
         }
 
         public void OnGUI()
@@ -44,25 +60,25 @@ namespace MegaChaos.Services.Chaos
             _activeEffects.Clear();
         }
 
+        public void ClearLog()
+        {
+            _log.Clear();
+        }
+
         private void UpdateActiveEffects()
         {
             for (int i = _activeEffects.Count - 1; i >= 0; i--)
             {
                 var state = _activeEffects[i];
-                
-                // Her frame çalışması gereken kodları (varsa) tetikle
                 state.Effect.OnUpdate(Time.unscaledDeltaTime);
 
-                // Süreli bir etkiyse süreyi düşür
                 if (!state.IsPermanent)
                 {
                     state.RemainingTime -= Time.unscaledDeltaTime;
                     if (state.RemainingTime <= 0)
                     {
-                        // Etkinin süresi doldu, geri al (restore)
                         state.Effect.OnEnd();
                         _activeEffects.RemoveAt(i);
-                        MegaChaos.Main.Msg($"[MegaChaos] Effect ended: {state.Effect.Name}");
                     }
                 }
             }
@@ -80,42 +96,46 @@ namespace MegaChaos.Services.Chaos
         public void TriggerRandomEffect()
         {
             if (_availableEffects.Count == 0) return;
-
-            int randomIndex = Random.Range(0, _availableEffects.Count);
-            IChaosEffect effectToStart = _availableEffects[randomIndex];
-            TriggerEffect(effectToStart);
+            int randomIndex = UnityEngine.Random.Range(0, _availableEffects.Count);
+            TriggerEffect(_availableEffects[randomIndex]);
         }
 
         public void TriggerEffect(IChaosEffect effect, float customDuration = -2f)
         {
-            float durationToUse = customDuration == -2f ? effect.DefaultDuration : customDuration;
+            var profile = ProfileManager.ActiveProfile;
+            float multiplier = profile?.ChaosDurationMultiplier ?? 1f;
+            float baseDuration = customDuration == -2f ? effect.DefaultDuration : customDuration;
+            float durationToUse = baseDuration > 0 ? baseDuration * multiplier : baseDuration;
 
-            MegaChaos.Main.Msg($"[MegaChaos] Triggering Effect: {effect.Name} (Duration: {durationToUse})");
+            MegaChaos.Main.Msg($"[MegaChaos] Triggering: {effect.Name} (Duration: {durationToUse:F1}s)");
             MegaChaos.Services.NotificationService.Show($"CHAOS: {effect.Name}!", null, MegaChaos.Services.NotificationService.NotificationType.Warning);
-            
+
+            // Add to log (keep last 100 entries)
+            _log.Insert(0, new ChaosLogEntry(effect.Name));
+            if (_log.Count > 100) _log.RemoveAt(_log.Count - 1);
+
             effect.OnStart();
 
             if (durationToUse > 0)
             {
-                _activeEffects.Add(new ActiveEffectState 
-                { 
-                    Effect = effect, 
+                _activeEffects.Add(new ActiveEffectState
+                {
+                    Effect = effect,
                     RemainingTime = durationToUse,
-                    IsPermanent = false 
+                    IsPermanent = false
                 });
             }
-            else if (durationToUse == -1) // Kalıcı etki
+            else if (durationToUse == -1)
             {
-                _activeEffects.Add(new ActiveEffectState 
-                { 
-                    Effect = effect, 
+                _activeEffects.Add(new ActiveEffectState
+                {
+                    Effect = effect,
                     RemainingTime = 0,
-                    IsPermanent = true 
+                    IsPermanent = true
                 });
             }
             else
             {
-                // Anında biten etki
                 effect.OnEnd();
             }
         }

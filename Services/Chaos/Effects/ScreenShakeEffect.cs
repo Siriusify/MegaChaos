@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class ScreenShakeEffect : IChaosEffect
     {
         public string Id => "effect_screenshake";
-        public string Name => "Deprem";
+        public string Name => "Earthquake";
         public string Description => "Kamera şiddetle sallanır, zemin kayıyor gibi hissettiriri!";
         public float DefaultDuration => 8f;
 

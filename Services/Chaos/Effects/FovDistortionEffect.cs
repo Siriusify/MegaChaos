@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class FovDistortionEffect : IChaosEffect
     {
         public string Id => "effect_fov";
-        public string Name => "Mide Bulantısı";
+        public string Name => "Nausea";
         public string Description => "Kamera görüş açısı (FOV) sürekli genişleyip daralarak baş döndürür!";
         public float DefaultDuration => 20f;
 

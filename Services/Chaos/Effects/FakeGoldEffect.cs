@@ -8,7 +8,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class FakeGoldEffect : IChaosEffect
     {
         public string Id => "effect_fakegold";
-        public string Name => "Vergi Denetimi (Troll)";
+        public string Name => "Tax Audit (Troll)";
         public string Description => "Eşyalarınızı ve altınlarınızı gerçekten hacveder, süre bitince iade eder!";
         public float DefaultDuration => 5f;
 

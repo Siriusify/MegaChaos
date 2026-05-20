@@ -12,7 +12,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class ExpCleanerEffect : IChaosEffect
     {
         public string Id => "effect_expcleaner";
-        public string Name => "EXP Süpürge";
+        public string Name => "EXP Vacuum";
         public string Description => "Haritadaki tüm XP toplarını anında kendine çekersin!";
         public float DefaultDuration => 0f; // anlık
 

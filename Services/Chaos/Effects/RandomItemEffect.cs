@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class RandomItemEffect : IChaosEffect
     {
         public string Id => "effect_randomitem";
-        public string Name => "Item Çekiliş";
+        public string Name => "Item Lottery";
         public string Description => "Rastgele item alırsın ya da kaybedersin — şansa bak!";
         public float DefaultDuration => 0f; // anlık
 

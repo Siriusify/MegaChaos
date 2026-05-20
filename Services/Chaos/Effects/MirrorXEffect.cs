@@ -9,7 +9,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class MirrorXEffect : IChaosEffect
     {
         public string Id => "effect_mirrorx";
-        public string Name => "Ayna Dünya";
+        public string Name => "Mirror World";
         public string Description => "Ekranı yatay olarak aynalar! Kontroller düz ama gözün yanılır.";
         public float DefaultDuration => 10f;
 

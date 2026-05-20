@@ -5,7 +5,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class BlindnessEffect : IChaosEffect
     {
         public string Id => "effect_blindness";
-        public string Name => "Körlük";
+        public string Name => "Blindness";
         public string Description => "Oyun dünyası kararır ama arayüz (HUD) görünmeye devam eder!";
         public float DefaultDuration => 15f;
 

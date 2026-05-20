@@ -9,7 +9,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class ColorTintEffect : IChaosEffect
     {
         public string Id => "effect_colortint";
-        public string Name => "Renk Filtresi";
+        public string Name => "Color Filter";
         public string Description => "Ekranın üzerine garip bir renk filtresi iner!";
         public float DefaultDuration => 10f;
 
