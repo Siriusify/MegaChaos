@@ -180,6 +180,7 @@ internal sealed class RewardSchedulerWindow
     private bool _itemSearchFieldActive;
     private string _itemSearchText = string.Empty;
     private int _numericCursorPos = -1;
+    private int _profileDialogCursorPos = -1;
     private int _searchCursorPos = -1;
     private int _itemSearchCursorPos = -1;
     private string _status = string.Empty;
@@ -363,6 +364,7 @@ internal sealed class RewardSchedulerWindow
         {
             _profileDialogMode = "create";
             _profileDialogText = $"Profile {ProfileManager.Profiles.Count + 1}";
+            _profileDialogCursorPos = _profileDialogText.Length;
             _profileDialogOpen = true;
         }
         cursorX += 40f;
@@ -383,6 +385,7 @@ internal sealed class RewardSchedulerWindow
         {
             _profileDialogMode = "rename";
             _profileDialogText = ProfileManager.ActiveProfile?.Name ?? "";
+            _profileDialogCursorPos = _profileDialogText.Length;
             _profileDialogOpen = true;
         }
     }
@@ -420,7 +423,10 @@ internal sealed class RewardSchedulerWindow
         var fieldX = dialogRect.x + 30f;
         var fieldY = dialogRect.y + 70f;
         GUI.Label(new Rect(fieldX, fieldY, dialogWidth - 60, 28), "Profile Name:", _cellStyle);
-        _profileDialogText = GUI.TextField(new Rect(fieldX, fieldY + 30, dialogWidth - 60, 36), _profileDialogText, _dropdownStyle);
+        
+        var inputRect = new Rect(fieldX, fieldY + 30, dialogWidth - 60, 36);
+        GUI.Label(inputRect, _profileDialogText, _dropdownStyle);
+        if (_profileDialogOpen) DrawTextCursor(inputRect, _profileDialogText, _profileDialogCursorPos, _cellStyle);
 
         var footerY = dialogRect.y + dialogRect.height - 56f;
         if (GUI.Button(new Rect(dialogRect.x + dialogRect.width - 236f, footerY, 102f, 36f), "CANCEL", _buttonStyle))
@@ -2359,7 +2365,8 @@ internal sealed class RewardSchedulerWindow
 
         if (currentEvent.keyCode == KeyCode.LeftArrow)
         {
-            if (_searchFieldActive && _searchCursorPos > 0) _searchCursorPos--;
+            if (_profileDialogOpen && _profileDialogCursorPos > 0) _profileDialogCursorPos--;
+            else if (_searchFieldActive && _searchCursorPos > 0) _searchCursorPos--;
             else if (_itemSearchFieldActive && _itemSearchCursorPos > 0) _itemSearchCursorPos--;
             currentEvent.Use();
             return;
@@ -2367,7 +2374,8 @@ internal sealed class RewardSchedulerWindow
 
         if (currentEvent.keyCode == KeyCode.RightArrow)
         {
-            if (_searchFieldActive && _searchCursorPos < _searchText.Length) _searchCursorPos++;
+            if (_profileDialogOpen && _profileDialogCursorPos < _profileDialogText.Length) _profileDialogCursorPos++;
+            else if (_searchFieldActive && _searchCursorPos < _searchText.Length) _searchCursorPos++;
             else if (_itemSearchFieldActive && _itemSearchCursorPos < _itemSearchText.Length) _itemSearchCursorPos++;
             currentEvent.Use();
             return;
@@ -2375,7 +2383,12 @@ internal sealed class RewardSchedulerWindow
 
         if (currentEvent.keyCode == KeyCode.Backspace)
         {
-            if (_searchFieldActive && _searchText.Length > 0 && _searchCursorPos > 0)
+            if (_profileDialogOpen && _profileDialogText.Length > 0 && _profileDialogCursorPos > 0)
+            {
+                _profileDialogText = _profileDialogText.Remove(_profileDialogCursorPos - 1, 1);
+                _profileDialogCursorPos--;
+            }
+            else if (_searchFieldActive && _searchText.Length > 0 && _searchCursorPos > 0)
             {
                 _searchText = _searchText.Remove(_searchCursorPos - 1, 1);
                 _searchCursorPos--;
@@ -2391,7 +2404,11 @@ internal sealed class RewardSchedulerWindow
 
         if (currentEvent.keyCode == KeyCode.Delete)
         {
-            if (_searchFieldActive && _searchCursorPos < _searchText.Length)
+            if (_profileDialogOpen && _profileDialogCursorPos < _profileDialogText.Length)
+            {
+                _profileDialogText = _profileDialogText.Remove(_profileDialogCursorPos, 1);
+            }
+            else if (_searchFieldActive && _searchCursorPos < _searchText.Length)
             {
                 _searchText = _searchText.Remove(_searchCursorPos, 1);
             }
@@ -2406,7 +2423,13 @@ internal sealed class RewardSchedulerWindow
         var character = currentEvent.character;
         if (char.IsLetterOrDigit(character) || character == ' ' || character == '_' || character == '-')
         {
-            if (_searchFieldActive)
+            if (_profileDialogOpen)
+            {
+                int safeCursor = Math.Min(Math.Max(0, _profileDialogCursorPos), _profileDialogText.Length);
+                _profileDialogText = _profileDialogText.Insert(safeCursor, character.ToString());
+                _profileDialogCursorPos = safeCursor + 1;
+            }
+            else if (_searchFieldActive)
             {
                 int safeCursor = Math.Min(Math.Max(0, _searchCursorPos), _searchText.Length);
                 _searchText = _searchText.Insert(safeCursor, character.ToString());
