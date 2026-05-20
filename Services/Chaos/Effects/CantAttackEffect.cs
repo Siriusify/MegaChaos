@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     public class CantAttackEffect : IChaosEffect
     {
         public string Id => "effect_cantattack";
-        public string Name => "Cant Attack";
+        public string Name => "Pacifist";
         public string Description => "Silahların bir süreliğine çalışmıyor — kaçmaktan başka seçeneğin yok!";
         public float DefaultDuration => 8f;
 

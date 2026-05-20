@@ -1582,12 +1582,21 @@ internal sealed class RewardSchedulerWindow
     {
         var style = new GUIStyle(GUI.skin.button);
         int radius = 6;
-        style.normal.background = GenerateRoundedTexture(normal, normal, radius, 0);
-        style.normal.textColor = text;
-        style.hover.background = GenerateRoundedTexture(hover, hover, radius, 0);
-        style.hover.textColor = Color.white;
-        style.active.background = GenerateRoundedTexture(active, active, radius, 0);
-        style.active.textColor = Color.white;
+        var normalTex  = GenerateRoundedTexture(normal, normal, radius, 0);
+        var hoverTex   = GenerateRoundedTexture(hover,  hover,  radius, 0);
+        var activeTex  = GenerateRoundedTexture(active, active, radius, 0);
+
+        style.normal.background   = normalTex;  style.normal.textColor  = text;
+        style.hover.background    = hoverTex;   style.hover.textColor   = text;
+        style.active.background   = activeTex;  style.active.textColor  = text;
+        // Override Unity's default focused state (bright blue) with our own colors
+        style.focused.background  = hoverTex;   style.focused.textColor = text;
+        // onNormal / onHover / onActive are used by toggle-style buttons
+        style.onNormal.background  = normalTex; style.onNormal.textColor  = text;
+        style.onHover.background   = hoverTex;  style.onHover.textColor   = text;
+        style.onActive.background  = activeTex; style.onActive.textColor  = text;
+        style.onFocused.background = hoverTex;  style.onFocused.textColor = text;
+
         style.alignment = TextAnchor.MiddleCenter;
         style.fontSize = 13;
         style.fontStyle = FontStyle.Bold;

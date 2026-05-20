@@ -169,12 +169,18 @@ internal static class RuleScheduler
         var profile = ProfileManager.ActiveProfile;
         if (profile != null && profile.ChaosEnabled)
         {
-            _chaosTimer += Time.unscaledDeltaTime; // Unscaled so it's consistent with game logic, but pauses when game is paused.
+            // Accumulate the scheduler tick interval, not the frame delta time.
+            // Tick() is called once per CheckIntervalSeconds (default 1s), so we add that fixed amount.
+            _chaosTimer += ConfigService.CheckIntervalSeconds.Value;
             if (_chaosTimer >= profile.ChaosInterval)
             {
                 _chaosTimer = 0f;
                 Chaos.ChaosEngine.Instance.TriggerRandomEffect();
             }
+        }
+        else
+        {
+            _chaosTimer = 0f; // Reset when chaos is off so it starts fresh next time it's enabled.
         }
 
         // Log gold and health for debugging
