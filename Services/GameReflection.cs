@@ -100,8 +100,29 @@ internal static class GameReflection
         if (type == null)
             return null;
 
-        var method = GetMethodInfo(type, methodName, parameterTypes, true);
-        return method?.Invoke(null, args);
+        var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static, null, parameterTypes, null);
+        if (method != null)
+            return method.Invoke(null, args);
+
+        return null;
+    }
+
+    public static System.Collections.IEnumerable FindObjectsOfType(Type type)
+    {
+        if (type == null) return null;
+        var findMethod = typeof(UnityEngine.Object).GetMethod("FindObjectsOfType", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(Type) }, null);
+        if (findMethod != null)
+            return findMethod.Invoke(null, new object[] { type }) as System.Collections.IEnumerable;
+        return null;
+    }
+
+    public static System.Collections.IEnumerable FindObjectsOfTypeAll(Type type)
+    {
+        if (type == null) return null;
+        var findMethod = typeof(UnityEngine.Resources).GetMethod("FindObjectsOfTypeAll", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(Type) }, null);
+        if (findMethod != null)
+            return findMethod.Invoke(null, new object[] { type }) as System.Collections.IEnumerable;
+        return null;
     }
 
     public static object InvokeInstance(object instance, string methodName, Type[] parameterTypes, params object[] args)

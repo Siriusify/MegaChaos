@@ -81,43 +81,28 @@ namespace MegaChaos.Services.Chaos.Effects
             if (_enemyType == null) return;
             try
             {
-                var roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
-                foreach (var root in roots) TraverseAndApply(root.transform);
-            }
-            catch { }
-        }
+                var enemies = GameReflection.FindObjectsOfType(_enemyType);
+                if (enemies == null) return;
 
-        private void TraverseAndApply(Transform t)
-        {
-            if (t == null) return;
-            try
-            {
-                var comps = t.GetComponents(typeof(UnityEngine.Behaviour));
-                if (comps != null)
+                foreach (var obj in enemies)
                 {
-                    foreach (var obj in comps)
+                    if (obj == null) continue;
+
+                    var dead = GameReflection.InvokeInstance(obj, "IsDead", Type.EmptyTypes);
+                    if (dead != null && (bool)dead) continue;
+
+                    var hpRatio = GameReflection.InvokeInstance(obj, "GetHpRatio", Type.EmptyTypes);
+                    if (hpRatio == null) continue;
+                    float ratio = Convert.ToSingle(hpRatio);
+                    if (ratio <= 0.01f) continue; // Zaten ölmek üzere
+
+                    if (ratio > 0.02f)
                     {
-                        var enemy = obj as MonoBehaviour;
-                        if (enemy == null || enemy.GetType().Name != "Enemy") continue;
-
-                        var dead = GameReflection.InvokeInstance(enemy, "IsDead", Type.EmptyTypes);
-                        if (dead != null && (bool)dead) continue;
-
-                        var hpRatio = GameReflection.InvokeInstance(enemy, "GetHpRatio", Type.EmptyTypes);
-                        if (hpRatio == null) continue;
-                        float ratio = Convert.ToSingle(hpRatio);
-                        if (ratio <= 0.01f) continue; // Zaten ölmek üzere
-
-                        if (ratio > 0.02f)
-                        {
-                            GameReflection.InvokeInstance(enemy, "Heal", new[] { typeof(int) }, -999999);
-                        }
+                        GameReflection.InvokeInstance(obj, "Heal", new[] { typeof(int) }, -999999);
                     }
                 }
             }
             catch { }
-
-            for (int i = 0; i < t.childCount; i++) TraverseAndApply(t.GetChild(i));
         }
 
         public void OnGUI() { }

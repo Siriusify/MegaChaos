@@ -20,10 +20,25 @@ namespace MegaChaos.Services.Chaos.Effects
             int count = 0;
             try
             {
-                var roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
-                foreach (var root in roots)
+                foreach (var target in HudTypeNames)
                 {
-                    count += TraverseAndDisable(root.transform);
+                    var hudType = GameReflection.FindType(target);
+                    if (hudType == null) continue;
+                    
+                    var huds = GameReflection.FindObjectsOfType(hudType);
+                    if (huds == null) continue;
+
+                    foreach (var obj in huds)
+                    {
+                        var b = obj as Behaviour;
+                        if (b != null && b.enabled)
+                        {
+                            b.enabled = false;
+                            _saved.Add((b, true));
+                            count++;
+                            MegaChaos.Main.Msg($"[NoHud] Disabled: {target} on '{b.gameObject.name}'");
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -35,47 +50,6 @@ namespace MegaChaos.Services.Chaos.Effects
                 NotificationService.Show($"No HUD! ({count} components hidden)", null, NotificationService.NotificationType.Warning);
             else
                 NotificationService.Show("No HUD: No HUD found in this scene.", null, NotificationService.NotificationType.Unlucky);
-        }
-
-        private int TraverseAndDisable(Transform t)
-        {
-            int found = 0;
-            if (t == null) return found;
-
-            try
-            {
-                var comps = t.GetComponents(typeof(UnityEngine.Behaviour));
-                if (comps != null)
-                {
-                    foreach (var obj in comps)
-                    {
-                        var b = obj as Behaviour;
-                        if (b == null) continue;
-
-                        string typeName = b.GetType().Name;
-                        bool match = false;
-                        foreach (var target in HudTypeNames)
-                        {
-                            if (typeName == target) { match = true; break; }
-                        }
-
-                        if (match && b.enabled)
-                        {
-                            b.enabled = false;
-                            _saved.Add((b, true));
-                            found++;
-                            MegaChaos.Main.Msg($"[NoHud] Disabled: {typeName} on '{b.gameObject.name}'");
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            for (int i = 0; i < t.childCount; i++)
-            {
-                found += TraverseAndDisable(t.GetChild(i));
-            }
-            return found;
         }
 
         public void OnUpdate(float dt) { }
