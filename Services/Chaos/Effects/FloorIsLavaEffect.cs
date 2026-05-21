@@ -77,30 +77,7 @@ namespace MegaChaos.Services.Chaos.Effects
                         if (mat != null) GameReflection.SetMember(mat, "color", new Color(1f, 0.4f, 0f, 0.8f));
                     }
                     
-                    // Add native Lava component via reflection
-                    try
-                    {
-                        var lavaType = GameReflection.FindType("Lava", "", "Assembly-CSharp");
-                        if (lavaType != null)
-                        {
-                            var addComp = typeof(GameObject).GetMethod("AddComponent", new[] { typeof(Type) });
-                            if (addComp != null)
-                            {
-                                var lavaComp = addComp.Invoke(lavaPrefab, new object[] { lavaType });
-                                if (lavaComp != null)
-                                {
-                                    // Configure it
-                                    GameReflection.SetMember(lavaComp, "damage", 10f);
-                                    GameReflection.SetMember(lavaComp, "damageInterval", 0.5f);
-                                    GameReflection.SetMember(lavaComp, "isDamageZone", true);
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        MegaChaos.Main.Warn("[FloorIsLava] Could not add native Lava component: " + ex.Message);
-                    }
+                    // We rely on OnUpdate loop for Fake Lava damage, so we don't need to add the Lava script.
                     var col = lavaPrefab.GetComponent("Collider");
                     if (col != null) GameReflection.SetMember(col, "isTrigger", true); // Don't block walking, but allow Lava script to detect touch
                     isFakeLava = true;
