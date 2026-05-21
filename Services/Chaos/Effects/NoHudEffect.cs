@@ -50,21 +50,24 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             try
             {
-                string[] parts = path.Split('/');
-                if (parts.Length == 0) return null;
-                
-                GameObject current = GameObject.Find(parts[0]);
-                if (current == null) return null;
-                
-                for (int i = 1; i < parts.Length; i++)
+                var transforms = UnityEngine.Resources.FindObjectsOfTypeAll<Transform>();
+                foreach (var t in transforms)
                 {
-                    Transform child = current.transform.Find(parts[i]);
-                    if (child == null) return null;
-                    current = child.gameObject;
+                    if (t != null && GetFullPath(t) == path)
+                    {
+                        return t.gameObject;
+                    }
                 }
-                return current;
+                return null;
             }
             catch { return null; }
+        }
+
+        private string GetFullPath(Transform current)
+        {
+            if (current == null) return "";
+            if (current.parent == null) return current.name;
+            return GetFullPath(current.parent) + "/" + current.name;
         }
 
         public void OnUpdate(float dt) 
