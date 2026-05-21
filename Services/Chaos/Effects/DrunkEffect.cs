@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using MegaChaos.Services.Chaos;
 
@@ -18,22 +19,53 @@ namespace MegaChaos.Services.Chaos.Effects
         private float _swayAmpX;
         private float _swayAmpY;
 
+        private object _playerMovement;
+        private object _playerRb;
+        private float _stumbleTimer;
+
         public void OnStart()
         {
             _elapsed     = 0f;
-            _fovAmp      = Random.Range(5f, 14f);
-            _rollAmp     = Random.Range(4f, 12f);
-            _swaySpeedX  = Random.Range(1.2f, 2.5f);
-            _swaySpeedY  = Random.Range(1.5f, 3.0f);
-            _swayAmpX    = Random.Range(0.05f, 0.15f);
-            _swayAmpY    = Random.Range(0.03f, 0.10f);
+            _fovAmp      = UnityEngine.Random.Range(5f, 14f);
+            _rollAmp     = UnityEngine.Random.Range(4f, 12f);
+            _swaySpeedX  = UnityEngine.Random.Range(1.2f, 2.5f);
+            _swaySpeedY  = UnityEngine.Random.Range(1.5f, 3.0f);
+            _swayAmpX    = UnityEngine.Random.Range(0.05f, 0.15f);
+            _swayAmpY    = UnityEngine.Random.Range(0.03f, 0.10f);
+            
+            _playerMovement = null;
+            _playerRb = null;
+            _stumbleTimer = 0f;
+
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (player != null)
+                {
+                    _playerMovement = GameReflection.GetMember(player, "playerMovement");
+                    if (_playerMovement != null)
+                    {
+                        var rbObj = GameReflection.GetMember(_playerMovement, "rb");
+                        if (rbObj != null) _playerRb = rbObj;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MegaChaos.Main.Error("[DrunkEffect] OnStart Error: " + ex.Message);
+            }
+
             NotificationService.Show("Your head is spinning...", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float deltaTime)
         {
+            if (Time.timeScale <= 0.01f) return;
+
             _elapsed += deltaTime;
 
+            // Visual Drunkness
             float fovOffset = Mathf.Sin(_elapsed * 1.3f) * _fovAmp;
             float roll      = Mathf.Sin(_elapsed * 0.8f) * _rollAmp;
             float swayX     = Mathf.Sin(_elapsed * _swaySpeedX) * _swayAmpX;
@@ -45,6 +77,35 @@ namespace MegaChaos.Services.Chaos.Effects
                 PosOffset  = new Vector3(swayX, swayY, 0f),
                 RollDeg    = roll
             });
+
+            // Physical Drunkness
+            if (_playerRb != null)
+            {
+                _stumbleTimer -= deltaTime;
+                if (_stumbleTimer <= 0f)
+                {
+                    _stumbleTimer = UnityEngine.Random.Range(0.3f, 1.2f);
+
+                    Vector2 randomCircle = UnityEngine.Random.insideUnitCircle.normalized;
+                    Vector3 stumbleForce = new Vector3(randomCircle.x, 0f, randomCircle.y) * UnityEngine.Random.Range(200f, 600f);
+
+                    // Add a vertical stumble sometimes
+                    if (UnityEngine.Random.value > 0.8f)
+                    {
+                        stumbleForce.y = UnityEngine.Random.Range(150f, 300f);
+                    }
+
+                    try
+                    {
+                        var method = _playerRb.GetType().GetMethod("AddForce", new[] { typeof(Vector3), typeof(int) });
+                        if (method != null)
+                        {
+                            method.Invoke(_playerRb, new object[] { stumbleForce, 1 }); // 1 is ForceMode.Impulse
+                        }
+                    }
+                    catch { }
+                }
+            }
         }
 
         public void OnGUI() { }
