@@ -61,11 +61,13 @@ namespace MegaChaos.Services.Chaos.Effects
                     }
                 }
 
-                string msg = goldTaken > 0
-                    ? $"GOLD HEIST! -{goldTaken} Gold stolen!"
-                    : "GOLD HEIST! Nothing to steal...";
+                string msg = $"GOLD HEIST! Tax Audit: {target}G.";
+                if (goldTaken > 0) msg += $" Took {goldTaken}G.";
+                if (itemTypesStolenCount > 0) msg += $" Confiscated {itemTypesStolenCount} items!";
+                else if (goldTaken == 0) msg += " Nothing to steal...";
+
                 NotificationService.Show(msg, null, NotificationService.NotificationType.Unlucky);
-                Main.Msg($"[GoldHeist] Took {goldTaken} gold, {itemTypesStolenCount} item types stolen.");
+                Main.Msg($"[GoldHeist] Target: {target}, Took {goldTaken} gold, {itemTypesStolenCount} item types stolen.");
             }
             catch (Exception ex)
             {

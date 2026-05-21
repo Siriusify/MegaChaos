@@ -64,6 +64,10 @@ namespace MegaChaos.Services.Chaos
         public void Update()
         {
             UpdateActiveEffects();
+        }
+
+        public void LateUpdate()
+        {
             CameraEffectStack.Apply();
         }
 
@@ -96,7 +100,33 @@ namespace MegaChaos.Services.Chaos
 
         private void UpdateActiveEffects()
         {
-            float dt = Time.unscaledDeltaTime;
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (player != null)
+                {
+                    var inventory = GameReflection.GetMember(player, "inventory");
+                    if (inventory != null)
+                    {
+                        var playerHealth = GameReflection.GetMember(inventory, "playerHealth");
+                        if (playerHealth != null)
+                        {
+                            var currentHealthObj = GameReflection.GetMember(playerHealth, "currentHealth");
+                            if (currentHealthObj is float fHealth && fHealth <= 0)
+                            {
+                                if (_activeEffects.Count > 0)
+                                {
+                                    ClearAllEffects();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            float dt = Time.deltaTime;
 
             for (int i = _activeEffects.Count - 1; i >= 0; i--)
             {
@@ -294,7 +324,7 @@ namespace MegaChaos.Services.Chaos
                 bool isActive = s.EndFadeTimer < 0; // still running
                 bool isFading = !isActive && s.EndFadeTimer >= 0;
                 bool isPermanent = isActive && s.IsPermanent;
-                bool hideBar = s.Effect.Id.StartsWith("effect_fake"); // Fake effects hide bar
+                bool hideBar = s.Effect.Id.StartsWith("effect_fake") || s.Effect.Id == "effect_cleareffects"; // Fake effects and clear effect hide bar
 
                 float alpha = 1f;
                 if (isFading)

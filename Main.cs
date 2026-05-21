@@ -38,7 +38,6 @@ public sealed class Main : MelonMod
         // Örnek etkiyi kaydet
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.DummySizeChangeEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.MiniModeEffect());
-        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.TimeBendEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.HyperSpeedEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.SlowMotionEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.BlindnessEffect());
@@ -100,6 +99,11 @@ public sealed class Main : MelonMod
 
         _nextTickTime = now + ConfigService.CheckIntervalSeconds.Value;
         RuleScheduler.Tick(now);
+    }
+
+    public override void OnLateUpdate()
+    {
+        ChaosEngine.Instance.LateUpdate();
     }
 
     public override void OnGUI()

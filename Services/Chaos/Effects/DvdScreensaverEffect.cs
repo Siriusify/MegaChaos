@@ -73,6 +73,7 @@ namespace MegaChaos.Services.Chaos.Effects
                         var bytes = new byte[stream.Length];
                         stream.Read(bytes, 0, bytes.Length);
                         var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                        tex.hideFlags = HideFlags.HideAndDontSave;
                         if (ImageConversion.LoadImage(tex, bytes))
                         {
                             _logoTex = tex;

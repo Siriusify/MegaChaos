@@ -44,7 +44,28 @@ namespace MegaChaos.Services.Chaos.Effects
             }
         }
 
-        public void OnUpdate(float deltaTime) { }
+        public void OnUpdate(float deltaTime) 
+        {
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (player != null)
+                {
+                    var inventory = GameReflection.GetMember(player, "inventory");
+                    if (inventory != null)
+                    {
+                        var playerStats = GameReflection.GetMember(inventory, "playerStats");
+                        if (playerStats != null)
+                        {
+                            // If size tripled, speed should be 1/3 (0.33f)
+                            GameReflection.SetMember(playerStats, "MoveSpeedMultiplier", 0.33f);
+                        }
+                    }
+                }
+            } catch { }
+        }
+        
         public void OnGUI() { }
 
         public void OnEnd()
@@ -54,6 +75,23 @@ namespace MegaChaos.Services.Chaos.Effects
                 _playerTransform.localScale = _originalScale;
                 MegaChaos.Main.Msg("[MegaChaos] Player size restored.");
             }
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (player != null)
+                {
+                    var inventory = GameReflection.GetMember(player, "inventory");
+                    if (inventory != null)
+                    {
+                        var playerStats = GameReflection.GetMember(inventory, "playerStats");
+                        if (playerStats != null)
+                        {
+                            GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", System.Type.EmptyTypes);
+                        }
+                    }
+                }
+            } catch { }
         }
     }
 }

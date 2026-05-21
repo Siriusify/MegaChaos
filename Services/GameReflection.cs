@@ -119,9 +119,17 @@ internal static class GameReflection
     public static System.Collections.IEnumerable FindObjectsOfTypeAll(Type type)
     {
         if (type == null) return null;
-        var findMethod = typeof(UnityEngine.Resources).GetMethod("FindObjectsOfTypeAll", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(Type) }, null);
-        if (findMethod != null)
-            return findMethod.Invoke(null, new object[] { type }) as System.Collections.IEnumerable;
+        try
+        {
+            var il2cppTypeType = typeof(Il2CppSystem.Type);
+            var findMethod = typeof(UnityEngine.Resources).GetMethod("FindObjectsOfTypeAll", BindingFlags.Static | BindingFlags.Public, null, new[] { il2cppTypeType }, null);
+            if (findMethod != null)
+            {
+                var il2cppType = Il2CppInterop.Runtime.Il2CppType.From(type);
+                return findMethod.Invoke(null, new object[] { il2cppType }) as System.Collections.IEnumerable;
+            }
+        }
+        catch { }
         return null;
     }
 

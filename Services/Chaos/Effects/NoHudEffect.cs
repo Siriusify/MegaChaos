@@ -96,9 +96,9 @@ namespace MegaChaos.Services.Chaos.Effects
             return GetFullPath(current.parent) + "/" + current.name;
         }
 
-        public void OnUpdate(float dt) 
-        { 
-            // Force disable them continuously in case the game tries to re-enable them (e.g. opening pause menu)
+        public void OnUpdate(float dt)
+        {
+            if (_hiddenObjects == null) return;
             foreach (var obj in _hiddenObjects)
             {
                 if (obj != null && obj.activeSelf)

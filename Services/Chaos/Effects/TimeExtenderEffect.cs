@@ -12,9 +12,19 @@ namespace MegaChaos.Services.Chaos.Effects
 
         public void OnStart()
         {
-            int multiplier = UnityEngine.Random.Range(2, 11);
+            float multiplier = UnityEngine.Random.Range(1.5f, 3.5f);
+            
+            // Multiply future effects
+            var profile = ProfileManager.ActiveProfile;
+            if (profile != null)
+            {
+                profile.ChaosDurationMultiplier *= multiplier;
+            }
+
+            // Multiply active effects
             ChaosEngine.Instance.ExtendAllActive(multiplier, multiplier);
-            NotificationService.Show($"TIME EXTENDER: Active effects duration x{multiplier}!", null, NotificationService.NotificationType.Warning);
+            
+            NotificationService.Show($"TIME EXTENDER: All effect durations multiplied by x{multiplier:F1}!", null, NotificationService.NotificationType.Warning);
         }
 
         public void OnUpdate(float dt) { }

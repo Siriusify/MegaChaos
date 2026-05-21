@@ -24,20 +24,42 @@ namespace MegaChaos.Services.Chaos.Effects
             return GameReflection.GetMember(player, "transform") as Transform;
         }
 
+        private float _shrinkScale = 1f;
+
         public void OnStart()
         {
             _playerTransform = FindPlayerTransform();
             if (_playerTransform != null)
             {
                 _originalScale = _playerTransform.localScale;
-                float s = Random.Range(0.20f, 0.40f);
-                _playerTransform.localScale = _originalScale * s;
-                MegaChaos.Main.Msg($"[MiniMode] scale x{s:F2}");
+                _shrinkScale = Random.Range(0.20f, 0.40f);
+                _playerTransform.localScale = _originalScale * _shrinkScale;
+                MegaChaos.Main.Msg($"[MiniMode] scale x{_shrinkScale:F2}");
             }
             NotificationService.Show("YOU SHRUNK! Everything looks huge!", null, NotificationService.NotificationType.Warning);
         }
 
-        public void OnUpdate(float dt) { }
+        public void OnUpdate(float dt) 
+        {
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (player != null)
+                {
+                    var inventory = GameReflection.GetMember(player, "inventory");
+                    if (inventory != null)
+                    {
+                        var playerStats = GameReflection.GetMember(inventory, "playerStats");
+                        if (playerStats != null && _shrinkScale > 0)
+                        {
+                            GameReflection.SetMember(playerStats, "MoveSpeedMultiplier", 1f / _shrinkScale);
+                        }
+                    }
+                }
+            } catch { }
+        }
+        
         public void OnGUI() { }
 
         public void OnEnd()
@@ -45,6 +67,24 @@ namespace MegaChaos.Services.Chaos.Effects
             if (_playerTransform != null)
                 _playerTransform.localScale = _originalScale;
             NotificationService.Show("Back to normal size, take a breath!", null, NotificationService.NotificationType.Reward);
+
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                if (player != null)
+                {
+                    var inventory = GameReflection.GetMember(player, "inventory");
+                    if (inventory != null)
+                    {
+                        var playerStats = GameReflection.GetMember(inventory, "playerStats");
+                        if (playerStats != null)
+                        {
+                            GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", System.Type.EmptyTypes);
+                        }
+                    }
+                }
+            } catch { }
         }
     }
 }

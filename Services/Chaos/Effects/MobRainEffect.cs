@@ -23,54 +23,51 @@ namespace MegaChaos.Services.Chaos.Effects
 
             try
             {
-                // Doğrudan generic Object.FindObjectsOfType<Enemy>() çağrısı yapıyoruz.
-                // Bu yöntem IL2CPP altında reflection'a kıyasla 100% güvenilirdir.
-                var activeEnemies = UnityEngine.Object.FindObjectsOfType<Enemy>();
-                var aliveTemplates = new List<Enemy>();
-
-                if (activeEnemies != null)
+                var enemyType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Enemies.Enemy", "Assets.Scripts.Actors.Enemies.Enemy", "Enemy");
+                if (enemyType != null)
                 {
-                    foreach (var enemy in activeEnemies)
-                    {
-                        if (enemy == null) continue;
-                        try
-                        {
-                            // Canlı olan düşmanları şablon olarak topla
-                            var dead = GameReflection.InvokeInstance(enemy, "IsDead", Type.EmptyTypes);
-                            if (dead != null && (bool)dead) continue;
-                            aliveTemplates.Add(enemy);
-                        }
-                        catch
-                        {
-                            // Fallback: IsDead kontrolü patlarsa yine de ekle
-                            aliveTemplates.Add(enemy);
-                        }
-                    }
-                }
+                    var allEnemies = GameReflection.FindObjectsOfTypeAll(enemyType);
+                    var aliveTemplates = new List<UnityEngine.Object>();
 
-                if (aliveTemplates.Count > 0)
-                {
-                    var playerPos = GetPlayerPosition();
-                    for (int i = 0; i < wantedCount; i++)
+                    if (allEnemies != null)
                     {
-                        try
+                        foreach (var obj in allEnemies)
                         {
-                            var template = aliveTemplates[UnityEngine.Random.Range(0, aliveTemplates.Count)];
+                            var enemyObj = obj as UnityEngine.Object;
+                            if (enemyObj == null) continue;
                             
-                            // Oyuncunun etrafında dairesel rastgele pozisyon
-                            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-                            float dist  = UnityEngine.Random.Range(7f, 15f);
-                            var spawnPos = playerPos + new Vector3(Mathf.Cos(angle) * dist, 0.5f, Mathf.Sin(angle) * dist);
-
-                            var clone = UnityEngine.Object.Instantiate(template, spawnPos, Quaternion.identity);
-                            if (clone != null)
+                            // Check if it's a prefab or an active valid enemy
+                            var go = GameReflection.GetMember(enemyObj, "gameObject") as GameObject;
+                            if (go != null && !go.name.Contains("Boss")) 
                             {
-                                spawned++;
+                                aliveTemplates.Add(enemyObj);
                             }
                         }
-                        catch (Exception ex)
+                    }
+
+                    if (aliveTemplates.Count > 0)
+                    {
+                        var playerPos = GetPlayerPosition();
+                        for (int i = 0; i < wantedCount; i++)
                         {
-                            MegaChaos.Main.Warn("[MobRain] Klonlama hatası: " + ex.Message);
+                            try
+                            {
+                                var template = aliveTemplates[UnityEngine.Random.Range(0, aliveTemplates.Count)];
+                                
+                                float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+                                float dist  = UnityEngine.Random.Range(7f, 15f);
+                                var spawnPos = playerPos + new Vector3(Mathf.Cos(angle) * dist, 0.5f, Mathf.Sin(angle) * dist);
+
+                                var clone = UnityEngine.Object.Instantiate(template, spawnPos, Quaternion.identity);
+                                if (clone != null)
+                                {
+                                    spawned++;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                MegaChaos.Main.Warn("[MobRain] Klonlama hatası: " + ex.Message);
+                            }
                         }
                     }
                 }
