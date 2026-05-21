@@ -37,7 +37,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 }
 
                 // 1. Check for Lava prefab in memory
-                var allGos = Resources.FindObjectsOfTypeAll<GameObject>();
+                var allGos = UnityEngine.Object.FindObjectsOfType<GameObject>();
                 GameObject lavaPrefab = null;
 
                 if (allGos != null)
