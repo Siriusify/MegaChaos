@@ -36,79 +36,49 @@ namespace MegaChaos.Services.Chaos.Effects
                     _playerHealth = GameReflection.GetMember(inventory, "playerHealth");
                 }
 
-                // 1. Check for Lava prefab in memory using safe Hierarchy navigation (Avoids IL2CPP Stripping errors)
-                GameObject lavaPrefab = null;
-
+                // 1. Try to find the game's official TheFloorIsLava object!
+                GameObject officialLava = null;
                 try
                 {
-                    // First try to find CryptGeneration which holds the Lava
-                    var cryptGen = GameObject.Find("CryptGeneration");
-                    if (cryptGen != null)
+                    var worldEdge = GameObject.Find("WorldEdgeTop");
+                    if (worldEdge != null)
                     {
-                        lavaPrefab = FindLavaRecursive(cryptGen.transform);
-                    }
-
-                    // Fallback to direct find
-                    if (lavaPrefab == null)
-                    {
-                        var directLava = GameObject.Find("Lava");
-                        if (directLava != null)
+                        var lavaTrans = worldEdge.transform.Find("TheFloorIsLava");
+                        if (lavaTrans != null)
                         {
-                            lavaPrefab = directLava;
+                            officialLava = lavaTrans.gameObject;
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    MegaChaos.Main.Warn("[FloorIsLava] Find lava error: " + e.Message);
+                    MegaChaos.Main.Warn("[FloorIsLava] Error finding WorldEdgeTop/TheFloorIsLava: " + e.Message);
                 }
 
-                // 2. Fallback if Lava is not found
-                bool isFakeLava = false;
-                if (lavaPrefab == null)
-                {
-                    NotificationService.Show("Lava prefab not found in memory! Creating fake lava...", null, NotificationService.NotificationType.Warning);
-                    lavaPrefab = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                    lavaPrefab.name = "MegaChaos_FakeLava";
-                    
-                    // We don't touch Renderer or Collider via GetComponent to avoid ReadOnlySpan crash!
-                    isFakeLava = true;
-                }
-
-                // 3. Spawn ONE massive Lava to cover the map
                 if (player != null)
                 {
                     var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
                     Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
+                    float floorY = pPos.y + 0.2f; // Just slightly above the player's feet
                     
-                    // Place it JUST above the player's current Y so it clips above the ground
-                    float floorY = pPos.y + 0.15f; 
-
-                    var clone = GameObject.Instantiate(lavaPrefab);
-                    clone.name = "MegaChaos_SpawnedLava";
-                    clone.transform.position = new Vector3(pPos.x, floorY, pPos.z);
-                    
-                    if (isFakeLava)
+                    if (officialLava != null)
                     {
-                        clone.transform.localScale = new Vector3(30f, 1f, 30f); // 300x300 meters
+                        // Use the game's official lava!
+                        officialLava.transform.position = new Vector3(pPos.x, floorY, pPos.z);
+                        officialLava.SetActive(true);
+                        _spawnedLava.Add(officialLava); // We will disable it on end
                     }
                     else
                     {
-                        // Real lava might distort, but we need it big
-                        clone.transform.localScale = new Vector3(50f, 1f, 50f);
+                        // 2. Fallback: Create Fake Lava
+                        NotificationService.Show("Official lava not found! Creating fake lava...", null, NotificationService.NotificationType.Warning);
+                        var fakeLava = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                        fakeLava.name = "MegaChaos_FakeLava";
+                        fakeLava.transform.position = new Vector3(pPos.x, floorY, pPos.z);
+                        fakeLava.transform.localScale = new Vector3(30f, 1f, 30f); // 300x300 meters
+                        fakeLava.SetActive(true);
+                        _spawnedLava.Add(fakeLava);
                     }
-                    
-                    // We DO NOT update Bounds or Collider via GetComponent to avoid ReadOnlySpan crash!
-                    // Our custom ApplyDamageIfOnFloor method in OnUpdate will handle all damage!
-
-                    clone.SetActive(true);
-                    _spawnedLava.Add(clone);
-                }
-
-                if (isFakeLava)
-                {
-                    lavaPrefab.SetActive(false);
-                    GameObject.Destroy(lavaPrefab);
                 }
 
                 NotificationService.Show("THE FLOOR IS LAVA!", null, NotificationService.NotificationType.Warning);
@@ -184,25 +154,7 @@ namespace MegaChaos.Services.Chaos.Effects
             GUI.color = oldColor;
         }
 
-        private GameObject FindLavaRecursive(Transform parent)
-        {
-            if (parent == null) return null;
-            
-            if (parent.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                // Just return the object if it has Lava in its name.
-                // Avoid using GetComponent("Renderer") as it triggers ReadOnlySpan exception in Il2CppInterop.
-                return parent.gameObject;
-            }
-            
-            for (int i = 0; i < parent.childCount; i++)
-            {
-                var result = FindLavaRecursive(parent.GetChild(i));
-                if (result != null) return result;
-            }
-            
-            return null;
-        }
+
 
         public void OnEnd()
         {
