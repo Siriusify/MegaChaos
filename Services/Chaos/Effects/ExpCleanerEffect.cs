@@ -14,44 +14,35 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_expcleaner";
         public string Name => "EXP Vacuum";
         public string Description => "Haritadaki tüm XP toplarını anında kendine çekersin!";
-        public float DefaultDuration => 30f;
-
-        private float _timer;
-        private const float PullInterval = 0.5f;
+        public float DefaultDuration => 0f;
 
         public void OnStart()
         {
-            _timer = 0f;
-            NotificationService.Show("EXP Vacuum activated! Pulling XP... 🌀", null, NotificationService.NotificationType.Reward);
-        }
-
-        public void OnUpdate(float dt)
-        {
-            _timer += dt;
-            if (_timer >= PullInterval)
+            try
             {
-                _timer = 0f;
-                try
+                var managerType = GameReflection.FindType("PickupManager");
+                if (managerType != null)
                 {
-                    var managerType = GameReflection.FindType("PickupManager");
-                    if (managerType != null)
-                    {
-                        var instance = GameReflection.GetStaticMember(managerType, "Instance") 
-                                       ?? GameReflection.GetStaticMember(managerType, "get_Instance");
+                    var instance = GameReflection.GetStaticMember(managerType, "Instance") 
+                                   ?? GameReflection.GetStaticMember(managerType, "get_Instance");
 
-                        if (instance != null)
-                            GameReflection.InvokeInstance(instance, "PickupAllXp", Type.EmptyTypes);
+                    if (instance != null)
+                    {
+                        GameReflection.InvokeInstance(instance, "PickupAllXp", Type.EmptyTypes);
+                        NotificationService.Show("EXP Vacuum: Pulled all XP!", null, NotificationService.NotificationType.Reward);
+                        return;
                     }
                 }
-                catch { }
             }
+            catch { }
+            
+            NotificationService.Show("EXP Vacuum: Failed to pull.", null, NotificationService.NotificationType.Unlucky);
         }
+
+        public void OnUpdate(float dt) { }
 
         public void OnGUI() { }
 
-        public void OnEnd()
-        {
-            NotificationService.Show("EXP Vacuum ended.", null, NotificationService.NotificationType.Warning);
-        }
+        public void OnEnd() { }
     }
 }
