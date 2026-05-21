@@ -61,56 +61,37 @@ namespace MegaChaos.Services.Chaos.Effects
                     var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
                     Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
                     
-                    // Calculate global map bounds
-                    float mapMinY = pPos.y - 6f;
-                    float mapCenterY = pPos.y + 24f;
-                    
-                    try
-                    {
-                        var renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
-                        if (renderers != null && renderers.Length > 0)
-                        {
-                            bool initialized = false;
-                            Bounds mapBounds = new Bounds();
-                            
-                            foreach (var r in renderers)
-                            {
-                                if (r != null && r.gameObject != null && 
-                                    !r.gameObject.name.Contains("Lava") && 
-                                    !r.gameObject.name.Contains("Player"))
-                                {
-                                    if (!initialized)
-                                    {
-                                        mapBounds = r.bounds;
-                                        initialized = true;
-                                    }
-                                    else
-                                    {
-                                        mapBounds.Encapsulate(r.bounds);
-                                    }
-                                }
-                            }
-                            
-                            if (initialized)
-                            {
-                                mapMinY = mapBounds.min.y;
-                                mapCenterY = mapBounds.center.y;
-                            }
-                        }
-                    }
-                    catch { }
-
-                    // User requested formula for start: -(mapMinY + 5)
-                    _startY = -(mapMinY + 5f);
-                    
-                    // User requested target: Bounds.center.y / 2
-                    _targetY = mapCenterY / 2f;
-                    
-                    MegaChaos.Main.Msg($"[FloorIsLava] Map MinY: {mapMinY}, CenterY: {mapCenterY} -> StartY: {_startY}, TargetY: {_targetY}");
+                    float startY = -10f;
+                    float targetY = 10f;
+                    float lavaX = pPos.x;
+                    float lavaZ = pPos.z;
 
                     if (officialLava != null)
                     {
-                        officialLava.transform.position = new Vector3(pPos.x, _startY, pPos.z);
+                        lavaX = officialLava.transform.position.x;
+                        lavaZ = officialLava.transform.position.z;
+
+                        try
+                        {
+                            var renderer = officialLava.GetComponent(typeof(Renderer)) as Renderer;
+                            if (renderer != null)
+                            {
+                                float boundsMinY = renderer.bounds.min.y;
+                                float boundsCenterY = renderer.bounds.center.y;
+                                
+                                // User's exact formula: -(y+5) where y is bounds.min.y
+                                startY = -(boundsMinY + 5f);
+                                
+                                // Target formula: Bounds.center.y / 2
+                                targetY = boundsCenterY / 2f;
+                            }
+                        }
+                        catch { }
+
+                        _startY = startY;
+                        _targetY = targetY;
+
+                        officialLava.transform.position = new Vector3(lavaX, _startY, lavaZ);
                         officialLava.SetActive(true);
                         _spawnedLava.Add(officialLava);
                     }
