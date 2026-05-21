@@ -78,33 +78,41 @@ namespace MegaChaos.Services.Chaos.Effects
                 RollDeg    = roll
             });
 
-            // Physical Drunkness
-            if (_playerRb != null)
+            // Physical Drunkness (Apply velocity directly if AddForce is ignored)
+            if (_playerRb != null && _playerMovement != null)
             {
                 _stumbleTimer -= deltaTime;
                 if (_stumbleTimer <= 0f)
                 {
-                    _stumbleTimer = UnityEngine.Random.Range(0.3f, 1.2f);
+                    _stumbleTimer = UnityEngine.Random.Range(0.2f, 0.8f);
 
                     Vector2 randomCircle = UnityEngine.Random.insideUnitCircle.normalized;
-                    Vector3 stumbleForce = new Vector3(randomCircle.x, 0f, randomCircle.y) * UnityEngine.Random.Range(200f, 600f);
-
-                    // Add a vertical stumble sometimes
-                    if (UnityEngine.Random.value > 0.8f)
-                    {
-                        stumbleForce.y = UnityEngine.Random.Range(150f, 300f);
-                    }
-
+                    // Try setting velocity directly since AddForce might be overwritten by custom player physics
                     try
                     {
-                        var method = _playerRb.GetType().GetMethod("AddForce", new[] { typeof(Vector3), typeof(int) });
-                        if (method != null)
+                        var velProp = _playerRb.GetType().GetProperty("velocity");
+                        if (velProp != null)
                         {
-                            method.Invoke(_playerRb, new object[] { stumbleForce, 1 }); // 1 is ForceMode.Impulse
+                            Vector3 currentVel = (Vector3)velProp.GetValue(_playerRb);
+                            // Add chaotic stumble velocity
+                            Vector3 newVel = currentVel + new Vector3(randomCircle.x * 12f, 0f, randomCircle.y * 12f);
+                            if (UnityEngine.Random.value > 0.85f) newVel.y += 8f; // random hop
+                            velProp.SetValue(_playerRb, newVel);
                         }
                     }
                     catch { }
                 }
+
+                // Mess with orientation to make walking straight impossible
+                try
+                {
+                    var orientationObj = GameReflection.GetMember(_playerMovement, "orientation");
+                    if (orientationObj != null && orientationObj is Transform orientTrans)
+                    {
+                        orientTrans.Rotate(0f, Mathf.Sin(_elapsed * 2f) * 2f, 0f);
+                    }
+                }
+                catch { }
             }
         }
 
