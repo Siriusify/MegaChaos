@@ -38,13 +38,11 @@ namespace MegaChaos.Services.Chaos.Effects
 
                 // 1. Find Lava Prefab/Object in memory
                 GameObject lavaPrefab = null;
-                var goType = GameReflection.FindType("UnityEngine.GameObject", "UnityEngine", "UnityEngine.CoreModule");
-                var allGos = GameReflection.FindObjectsOfTypeAll(goType);
+                var allGos = Resources.FindObjectsOfTypeAll<GameObject>();
                 if (allGos != null)
                 {
-                    foreach (var obj in allGos)
+                    foreach (var go in allGos)
                     {
-                        var go = obj as GameObject;
                         if (go != null && go.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
                             // Avoid UI elements or random managers
@@ -116,6 +114,8 @@ namespace MegaChaos.Services.Chaos.Effects
 
         public void OnUpdate(float dt)
         {
+            if (Time.timeScale <= 0.01f) return; // Oyuncu pause yaptıysa veya oyun durduysa hasar verme
+            
             _damageTimer += dt;
             if (_damageTimer >= 0.5f) // Damage every 0.5s
             {
