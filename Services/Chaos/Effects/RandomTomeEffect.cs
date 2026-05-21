@@ -188,4 +188,95 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnGUI() { }
         public void OnEnd() { }
     }
+
+    /// <summary>
+    /// Fake Tome Lottery — Gives a tome but removes its stat bonus after 5 seconds.
+    /// Appears as "Tome Lottery" to the player.
+    /// </summary>
+    public class FakeTomeLotteryEffect : IChaosEffect
+    {
+        public string Id => "effect_faketome";
+        public string Name => "Tome Lottery";
+        public string Description => "Gives a tome… then takes it back after 5 seconds!";
+        public float DefaultDuration => 5f;
+
+        private object _appliedStatModifier;
+        private object _statInv;
+        private object _playerStats;
+        private string _tomeName;
+
+        public void OnStart()
+        {
+            try
+            {
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer",
+                    "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player      = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                var inventory   = GameReflection.GetMember(player, "inventory");
+                var tomeInv     = GameReflection.GetMember(inventory, "tomeInventory");
+                _statInv        = GameReflection.GetMember(inventory, "statInventory");
+                _playerStats    = GameReflection.GetMember(inventory, "playerStats");
+
+                if (tomeInv == null) { NotificationService.Show("Tome system not found.", null, NotificationService.NotificationType.Unlucky); return; }
+
+                // Reuse FindTomeData via RandomTomeEffect (static helper not available; duplicate minimal logic)
+                object tomeData = FindQuickTomeData(tomeInv);
+                if (tomeData == null) { NotificationService.Show("Tome Lottery: No tome data found.", null, NotificationService.NotificationType.Unlucky); return; }
+
+                _appliedStatModifier = GameReflection.GetMember(tomeData, "statModifier");
+                if (_appliedStatModifier != null && _statInv != null)
+                {
+                    var t = _appliedStatModifier.GetType();
+                    GameReflection.InvokeInstance(_statInv, "ChangeStat",
+                        new[] { t, typeof(bool), typeof(float), typeof(bool) },
+                        _appliedStatModifier, true, 0f, false);
+                }
+
+                try { _tomeName = GameReflection.GetMember(tomeData, "eTome")?.ToString(); } catch { }
+                NotificationService.Show($"+Tome: {_tomeName ?? "???"} 📖", null, NotificationService.NotificationType.Reward);
+            }
+            catch (Exception ex) { Main.Error("[FakeTome] OnStart: " + ex.Message); }
+        }
+
+        private object FindQuickTomeData(object tomeInv)
+        {
+            try
+            {
+                var dict = GameReflection.GetMember(tomeInv, "tomeUpgrade") as System.Collections.IDictionary;
+                if (dict != null && dict.Count > 0)
+                {
+                    var vals = new System.Collections.Generic.List<object>();
+                    foreach (System.Collections.DictionaryEntry e in dict) if (e.Value != null) vals.Add(e.Value);
+                    if (vals.Count > 0) return vals[new System.Random().Next(vals.Count)];
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        public void OnUpdate(float dt) { }
+        public void OnGUI() { }
+
+        public void OnEnd()
+        {
+            try
+            {
+                if (_appliedStatModifier != null && _statInv != null)
+                {
+                    // Invert the stat modifier to undo the buff
+                    var t = _appliedStatModifier.GetType();
+                    // Negate by applying the same modifier but treat as removing
+                    GameReflection.InvokeInstance(_statInv, "ChangeStat",
+                        new[] { t, typeof(bool), typeof(float), typeof(bool) },
+                        _appliedStatModifier, false, 0f, false);
+                }
+                if (_playerStats != null)
+                    try { GameReflection.InvokeInstance(_playerStats, "ForceUpdateStats", Type.EmptyTypes); } catch { }
+
+                NotificationService.Show("Tome Lottery was fake! Tome removed.", null, NotificationService.NotificationType.Warning);
+                ChaosEngine.Instance.AddLogEntry("Tome Lottery (It was fake!)");
+            }
+            catch (Exception ex) { Main.Error("[FakeTome] OnEnd: " + ex.Message); }
+        }
+    }
 }

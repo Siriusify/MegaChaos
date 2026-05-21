@@ -28,14 +28,38 @@ namespace MegaChaos.Services.Chaos
         private readonly List<ChaosLogEntry> _log = new List<ChaosLogEntry>();
         public IReadOnlyList<ChaosLogEntry> Log => _log;
 
-        private class ActiveEffectState
+        // Last 2 triggered effect IDs for cooldown
+        private readonly Queue<string> _recentIds = new Queue<string>();
+        private const int CooldownCount = 2;
+
+        // ── Active effects ────────────────────────────────────────────────
+        public class ActiveEffectState
         {
             public IChaosEffect Effect;
+            public float TotalDuration;
             public float RemainingTime;
             public bool IsPermanent;
+            // For overlay display: keep fading 3s after ending
+            public float EndFadeTimer = -1f;
         }
-        
-        private List<ActiveEffectState> _activeEffects = new List<ActiveEffectState>();
+
+        private readonly List<ActiveEffectState> _activeEffects = new List<ActiveEffectState>();
+
+        // Overlay: last 3 completed OR active effects
+        private readonly List<ActiveEffectState> _overlaySlots = new List<ActiveEffectState>();
+
+        // ── GTA-style overlay styles (lazy init) ─────────────────────────
+        private GUIStyle _overlayNameStyle;
+        private GUIStyle _overlayFadeStyle;
+        private Texture2D _barBgTex;
+        private Texture2D _barFillTex;
+        private bool _overlayStylesReady;
+
+        private const float OverlayWidth  = 260f;
+        private const float OverlayRowH   = 52f;
+        private const float OverlayFadeTime = 3f;
+        private const float OverlayRightMargin = 20f;
+        private const float OverlayBarH   = 8f;
 
         public void Update()
         {
@@ -45,25 +69,23 @@ namespace MegaChaos.Services.Chaos
 
         public void OnGUI()
         {
+            // Draw effect visuals
             foreach (var state in _activeEffects)
-            {
                 state.Effect.OnGUI();
-            }
+
+            // Draw GTA-style overlay
+            DrawOverlay();
         }
 
         public void ClearAllEffects()
         {
             foreach (var state in _activeEffects)
-            {
                 state.Effect.OnEnd();
-            }
             _activeEffects.Clear();
+            _recentIds.Clear();
         }
 
-        public void ClearLog()
-        {
-            _log.Clear();
-        }
+        public void ClearLog() => _log.Clear();
 
         public void AddLogEntry(string message)
         {
@@ -73,19 +95,39 @@ namespace MegaChaos.Services.Chaos
 
         private void UpdateActiveEffects()
         {
+            float dt = Time.unscaledDeltaTime;
+
             for (int i = _activeEffects.Count - 1; i >= 0; i--)
             {
                 var state = _activeEffects[i];
-                state.Effect.OnUpdate(Time.unscaledDeltaTime);
+                state.Effect.OnUpdate(dt);
 
                 if (!state.IsPermanent)
                 {
-                    state.RemainingTime -= Time.unscaledDeltaTime;
+                    state.RemainingTime -= dt;
                     if (state.RemainingTime <= 0)
                     {
                         state.Effect.OnEnd();
+                        // Start overlay fade-out
+                        state.EndFadeTimer = OverlayFadeTime;
                         _activeEffects.RemoveAt(i);
+                        // Move to overlay fading list
+                        _overlaySlots.Add(state);
+                        // Keep only last 3 slots
+                        while (_overlaySlots.Count > 3)
+                            _overlaySlots.RemoveAt(0);
                     }
+                }
+            }
+
+            // Tick overlay fade timers
+            for (int i = _overlaySlots.Count - 1; i >= 0; i--)
+            {
+                var s = _overlaySlots[i];
+                if (s.EndFadeTimer >= 0)
+                {
+                    s.EndFadeTimer -= dt;
+                    if (s.EndFadeTimer < 0) s.EndFadeTimer = 0;
                 }
             }
         }
@@ -102,8 +144,21 @@ namespace MegaChaos.Services.Chaos
         public void TriggerRandomEffect()
         {
             if (_availableEffects.Count == 0) return;
-            int randomIndex = UnityEngine.Random.Range(0, _availableEffects.Count);
-            TriggerEffect(_availableEffects[randomIndex]);
+
+            // Build pool excluding recently triggered effects
+            var pool = new List<IChaosEffect>(_availableEffects.Count);
+            foreach (var e in _availableEffects)
+            {
+                bool onCooldown = false;
+                foreach (var id in _recentIds)
+                    if (id == e.Id) { onCooldown = true; break; }
+                if (!onCooldown) pool.Add(e);
+            }
+
+            // Fallback: if all are on cooldown, use full pool
+            if (pool.Count == 0) pool = new List<IChaosEffect>(_availableEffects);
+
+            TriggerEffect(pool[UnityEngine.Random.Range(0, pool.Count)]);
         }
 
         public void TriggerEffect(IChaosEffect effect, float customDuration = -2f)
@@ -114,9 +169,14 @@ namespace MegaChaos.Services.Chaos
             float durationToUse = baseDuration > 0 ? baseDuration * multiplier : baseDuration;
 
             MegaChaos.Main.Msg($"[MegaChaos] Triggering: {effect.Name} (Duration: {durationToUse:F1}s)");
-            MegaChaos.Services.NotificationService.Show($"CHAOS: {effect.Name}!", null, MegaChaos.Services.NotificationService.NotificationType.Warning);
+            MegaChaos.Services.NotificationService.Show($"CHAOS: {effect.Name}!", null,
+                MegaChaos.Services.NotificationService.NotificationType.Warning);
 
-            // Add to log (keep last 100 entries)
+            // Cooldown tracking
+            _recentIds.Enqueue(effect.Id);
+            while (_recentIds.Count > CooldownCount) _recentIds.Dequeue();
+
+            // Log entry
             _log.Insert(0, new ChaosLogEntry(effect.Name));
             if (_log.Count > 100) _log.RemoveAt(_log.Count - 1);
 
@@ -124,26 +184,142 @@ namespace MegaChaos.Services.Chaos
 
             if (durationToUse > 0)
             {
-                _activeEffects.Add(new ActiveEffectState
+                var state = new ActiveEffectState
                 {
                     Effect = effect,
+                    TotalDuration = durationToUse,
                     RemainingTime = durationToUse,
                     IsPermanent = false
-                });
+                };
+                _activeEffects.Add(state);
+                // Show in overlay immediately
+                AddToOverlaySlots(state);
             }
             else if (durationToUse == -1)
             {
-                _activeEffects.Add(new ActiveEffectState
+                var state = new ActiveEffectState
                 {
                     Effect = effect,
+                    TotalDuration = -1,
                     RemainingTime = 0,
                     IsPermanent = true
-                });
+                };
+                _activeEffects.Add(state);
+                AddToOverlaySlots(state);
             }
             else
             {
+                // Instant effect: add to overlay as already-ended, with fade timer
+                var state = new ActiveEffectState
+                {
+                    Effect = effect,
+                    TotalDuration = 0,
+                    RemainingTime = 0,
+                    IsPermanent = false,
+                    EndFadeTimer = OverlayFadeTime
+                };
                 effect.OnEnd();
+                _overlaySlots.Add(state);
+                while (_overlaySlots.Count > 3) _overlaySlots.RemoveAt(0);
             }
+        }
+
+        private void AddToOverlaySlots(ActiveEffectState state)
+        {
+            // Remove if already present, then add to end (newest last)
+            _overlaySlots.Remove(state);
+            _overlaySlots.Add(state);
+            while (_overlaySlots.Count > 3) _overlaySlots.RemoveAt(0);
+        }
+
+        // ── GTA-style overlay ─────────────────────────────────────────────
+        private void DrawOverlay()
+        {
+            if (_overlaySlots.Count == 0 && _activeEffects.Count == 0) return;
+
+            if (!_overlayStylesReady) InitOverlayStyles();
+            if (!_overlayStylesReady) return;
+
+            // Build display list: active + fading slots (newest = bottom)
+            var display = new List<ActiveEffectState>();
+            foreach (var s in _overlaySlots)
+                if (!display.Contains(s)) display.Add(s);
+            foreach (var s in _activeEffects)
+                if (!display.Contains(s)) display.Add(s);
+
+            // Keep only last 3
+            while (display.Count > 3) display.RemoveAt(0);
+
+            float screenW = Screen.width;
+            float screenH = Screen.height;
+            float startX = screenW - OverlayWidth - OverlayRightMargin;
+            float startY = screenH / 2f - (display.Count * OverlayRowH) / 2f;
+
+            var savedColor = GUI.color;
+
+            for (int i = 0; i < display.Count; i++)
+            {
+                var s = display[i];
+                bool isActive = s.EndFadeTimer < 0; // still running
+                bool isFading = !isActive && s.EndFadeTimer >= 0;
+                bool isPermanent = isActive && s.IsPermanent;
+
+                float alpha = 1f;
+                if (isFading)
+                    alpha = Mathf.Clamp01(s.EndFadeTimer / OverlayFadeTime);
+
+                float rowY = startY + i * OverlayRowH;
+
+                // ── Name ─────────────────────────────────
+                var nameStyle = isFading ? _overlayFadeStyle : _overlayNameStyle;
+                GUI.color = new Color(1f, 1f, 1f, alpha);
+                GUI.Label(new Rect(startX, rowY, OverlayWidth, OverlayRowH - OverlayBarH - 2f),
+                    s.Effect.Name, nameStyle);
+
+                // ── Progress bar ──────────────────────────
+                if (isActive && !isPermanent && s.TotalDuration > 0)
+                {
+                    float progress = Mathf.Clamp01(s.RemainingTime / s.TotalDuration);
+                    float barY = rowY + OverlayRowH - OverlayBarH - 2f;
+                    float barW = OverlayWidth - 4f;
+
+                    // Background
+                    GUI.color = new Color(0.15f, 0.15f, 0.15f, 0.85f * alpha);
+                    GUI.DrawTexture(new Rect(startX, barY, barW, OverlayBarH), _barBgTex);
+
+                    // Fill
+                    Color fillCol = Color.Lerp(new Color(0.9f, 0.3f, 0.1f), new Color(0.1f, 0.9f, 0.4f), progress);
+                    fillCol.a = alpha;
+                    GUI.color = fillCol;
+                    GUI.DrawTexture(new Rect(startX, barY, barW * progress, OverlayBarH), _barFillTex);
+                }
+            }
+
+            GUI.color = savedColor;
+        }
+
+        private void InitOverlayStyles()
+        {
+            _overlayNameStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 15,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleRight,
+            };
+            _overlayNameStyle.normal.textColor = Color.white;
+
+            _overlayFadeStyle = new GUIStyle(_overlayNameStyle);
+            _overlayFadeStyle.normal.textColor = new Color(0.55f, 0.55f, 0.55f);
+
+            _barBgTex = new Texture2D(1, 1);
+            _barBgTex.SetPixel(0, 0, Color.white);
+            _barBgTex.Apply();
+
+            _barFillTex = new Texture2D(1, 1);
+            _barFillTex.SetPixel(0, 0, Color.white);
+            _barFillTex.Apply();
+
+            _overlayStylesReady = true;
         }
     }
 }

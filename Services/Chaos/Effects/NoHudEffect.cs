@@ -22,10 +22,10 @@ namespace MegaChaos.Services.Chaos.Effects
         // Kapatılacak bileşen tipleri (Assembly-CSharp'tan direkt)
         // Reflection kullanmak yerine tip isimleri string olarak tutulur,
         // GameReflection ile runtime'da bulunur.
+        // Only disable HUD bars — NOT ItemsHud (which blocks item pickup/upgrade screens)
         private static readonly string[] HudTypeNames =
         {
             "InventoryHud",
-            "ItemsHud",
             "XpAndGoldHUD",
         };
 

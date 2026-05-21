@@ -26,9 +26,10 @@ namespace MegaChaos.Services.Chaos.Effects
         private const float W = 280f;
         private const float H = 120f;
 
-        // Çizim için gerekli tek texture (1×1 pixel, renk = beyaz, tinting ile boyar)
+        private Texture2D _logoTex;
         private Texture2D _whiteTex;
         private GUIStyle _labelStyle;
+        private GUIStyle _subStyle;
         private bool _stylesInit;
 
         public void OnStart()
@@ -46,10 +47,44 @@ namespace MegaChaos.Services.Chaos.Effects
 
             _color = NextColor();
 
-            // Tek texture: 1×1 beyaz — GUI.color tinting ile her rengi alır
+            // White fill texture for drawing overlays
             _whiteTex = new Texture2D(1, 1);
             _whiteTex.SetPixel(0, 0, Color.white);
             _whiteTex.Apply();
+
+            // Try to load the embedded dvdlogo.png resource
+            _logoTex = null;
+            try
+            {
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                // The embedded resource name is the namespace + filename as set in .csproj
+                string resourceName = null;
+                foreach (var name in asm.GetManifestResourceNames())
+                {
+                    if (name.EndsWith("dvdlogo.png", StringComparison.OrdinalIgnoreCase))
+                    { resourceName = name; break; }
+                }
+
+                if (resourceName != null)
+                {
+                    using var stream = asm.GetManifestResourceStream(resourceName);
+                    if (stream != null)
+                    {
+                        var bytes = new byte[stream.Length];
+                        stream.Read(bytes, 0, bytes.Length);
+                        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                        if (ImageConversion.LoadImage(tex, bytes))
+                        {
+                            _logoTex = tex;
+                            MegaChaos.Main.Msg("[DVD] dvdlogo.png loaded successfully.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MegaChaos.Main.Warn("[DVD] Could not load dvdlogo.png: " + ex.Message);
+            }
 
             _stylesInit = false;
 
@@ -121,17 +156,26 @@ namespace MegaChaos.Services.Chaos.Effects
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
             GUI.DrawTexture(new Rect(_x + b, _y + b, W - 2*b, H - 2*b), _whiteTex);
 
-            // ── DVD Metin / Logo ─────────────────────────────────────────────
-            GUI.color = _color;
-            // Alt başlık satırı
-            GUI.Label(new Rect(_x, _y + H * 0.15f, W, H * 0.55f), "DVD", _labelStyle);
-            // Küçük "Video" alt yazısı
-            GUI.Label(new Rect(_x, _y + H * 0.62f, W, H * 0.35f), "▶ VIDEO", _subStyle);
+            // ── DVD Logo / Metin ─────────────────────────────────────────────
+            if (_logoTex != null)
+            {
+                // Draw the actual PNG logo with color tint
+                GUI.color = _color;
+                float padding = b + 4f;
+                GUI.DrawTexture(
+                    new Rect(_x + padding, _y + padding, W - padding * 2f, H - padding * 2f),
+                    _logoTex, ScaleMode.ScaleToFit, true);
+            }
+            else
+            {
+                if (!_stylesInit) InitStyles();
+                GUI.color = _color;
+                GUI.Label(new Rect(_x, _y + H * 0.15f, W, H * 0.55f), "DVD", _labelStyle);
+                GUI.Label(new Rect(_x, _y + H * 0.62f, W, H * 0.35f), "▶ VIDEO", _subStyle);
+            }
 
             GUI.color = oldColor;
         }
-
-        private GUIStyle _subStyle;
 
         private void InitStyles()
         {

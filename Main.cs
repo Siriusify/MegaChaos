@@ -57,7 +57,9 @@ public sealed class Main : MelonMod
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.FakeGoldEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.GoldHeistEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.RandomItemEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.FakeItemLotteryEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.RandomTomeEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.FakeTomeLotteryEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.RandomStatEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ExpCleanerEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.CantAttackEffect());
