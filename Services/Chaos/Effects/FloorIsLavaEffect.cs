@@ -18,10 +18,15 @@ namespace MegaChaos.Services.Chaos.Effects
         private object _playerMovement;
         private object _playerHealth;
 
+        private float _elapsed;
+        private float _startY;
+        private float _targetY;
+
         public void OnStart()
         {
             _spawnedLava.Clear();
             _damageTimer = 0f;
+            _elapsed = 0f;
             _playerMovement = null;
             _playerHealth = null;
 
@@ -36,7 +41,6 @@ namespace MegaChaos.Services.Chaos.Effects
                     _playerHealth = GameReflection.GetMember(inventory, "playerHealth");
                 }
 
-                // 1. Try to find the game's official TheFloorIsLava object!
                 GameObject officialLava = null;
                 try
                 {
@@ -50,32 +54,29 @@ namespace MegaChaos.Services.Chaos.Effects
                         }
                     }
                 }
-                catch (Exception e)
-                {
-                    MegaChaos.Main.Warn("[FloorIsLava] Error finding WorldEdgeTop/TheFloorIsLava: " + e.Message);
-                }
+                catch { }
 
                 if (player != null)
                 {
                     var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
                     Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
-                    float floorY = pPos.y + 0.2f; // Just slightly above the player's feet
+                    
+                    // Start below the floor, target is center of bounds (approx 12 units high)
+                    _startY = pPos.y - 6f;
+                    _targetY = pPos.y + 12f;
                     
                     if (officialLava != null)
                     {
-                        // Use the game's official lava!
-                        officialLava.transform.position = new Vector3(pPos.x, floorY, pPos.z);
+                        officialLava.transform.position = new Vector3(pPos.x, _startY, pPos.z);
                         officialLava.SetActive(true);
-                        _spawnedLava.Add(officialLava); // We will disable it on end
+                        _spawnedLava.Add(officialLava);
                     }
                     else
                     {
-                        // 2. Fallback: Create Fake Lava
-                        NotificationService.Show("Official lava not found! Creating fake lava...", null, NotificationService.NotificationType.Warning);
                         var fakeLava = GameObject.CreatePrimitive(PrimitiveType.Plane);
                         fakeLava.name = "MegaChaos_FakeLava";
-                        fakeLava.transform.position = new Vector3(pPos.x, floorY, pPos.z);
-                        fakeLava.transform.localScale = new Vector3(30f, 1f, 30f); // 300x300 meters
+                        fakeLava.transform.position = new Vector3(pPos.x, _startY, pPos.z);
+                        fakeLava.transform.localScale = new Vector3(30f, 1f, 30f);
                         fakeLava.SetActive(true);
                         _spawnedLava.Add(fakeLava);
                     }
@@ -91,51 +92,58 @@ namespace MegaChaos.Services.Chaos.Effects
 
         public void OnUpdate(float dt)
         {
-            if (Time.timeScale <= 0.01f) return; // Oyuncu pause yaptıysa veya oyun durduysa hasar verme
+            if (Time.timeScale <= 0.01f) return;
             
+            _elapsed += dt;
+
+            // Animate Lava Rising and Lowering
+            float currentY = _startY;
+            float totalDuration = 30f; // Assuming default 30s
+            float riseTime = totalDuration - 5f; // Rise for 25s
+            
+            if (_elapsed < riseTime)
+            {
+                float t = _elapsed / riseTime;
+                currentY = Mathf.Lerp(_startY, _targetY, t);
+            }
+            else
+            {
+                float t = (_elapsed - riseTime) / 5f; // Lower in last 5s
+                currentY = Mathf.Lerp(_targetY, _startY, t);
+            }
+
+            foreach (var lava in _spawnedLava)
+            {
+                if (lava != null)
+                {
+                    lava.transform.position = new Vector3(lava.transform.position.x, currentY, lava.transform.position.z);
+                }
+            }
+
             _damageTimer += dt;
-            if (_damageTimer >= 0.5f) // Damage every 0.5s
+            if (_damageTimer >= 0.5f)
             {
                 _damageTimer = 0f;
-                ApplyDamageIfOnFloor();
+                ApplyDamageIfOnFloor(currentY);
             }
         }
 
-        private void ApplyDamageIfOnFloor()
+        private void ApplyDamageIfOnFloor(float lavaY)
         {
             if (_playerHealth == null || _playerMovement == null) return;
 
             try
             {
-                bool isGrounded = false;
-                
-                // Try finding common grounded flags
-                try { isGrounded = (bool)GameReflection.GetMember(_playerMovement, "isGrounded"); } catch { }
-                if (!isGrounded) try { isGrounded = (bool)GameReflection.GetMember(_playerMovement, "Grounded"); } catch { }
+                var playerGo = GameReflection.GetMember(_playerMovement, "gameObject") as GameObject;
+                if (playerGo == null) return;
 
-                // Check velocity if flag not found or false
-                if (!isGrounded)
-                {
-                    try
-                    {
-                        var velObj = GameReflection.GetMember(_playerMovement, "velocity");
-                        if (velObj != null)
-                        {
-                            Vector3 vel = (Vector3)velObj;
-                            // If not moving up or down significantly, likely on ground
-                            if (Mathf.Abs(vel.y) < 0.1f) isGrounded = true;
-                        }
-                    }
-                    catch { }
-                }
-
-                // If player is on the ground, apply lava damage!
-                if (isGrounded)
+                // Player takes damage if their Y position is at or below the lava level
+                float pY = playerGo.transform.position.y;
+                if (pY <= lavaY + 0.8f) // 0.8f offset so they get hit if standing slightly inside it
                 {
                     var method = _playerHealth.GetType().GetMethod("DamagePlayerExternal", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     if (method != null)
                     {
-                        // 10 damage per tick
                         method.Invoke(_playerHealth, new object[] { 10f, 0f, Vector3.zero, true, "Lava (MegaChaos)", 0, 0, null });
                     }
                 }
@@ -145,13 +153,7 @@ namespace MegaChaos.Services.Chaos.Effects
 
         public void OnGUI() 
         { 
-            // 100% reliable visual indicator: Tint the screen orange
-            var oldColor = GUI.color;
-            // Pulsing orange color
-            float alpha = 0.2f + Mathf.PingPong(Time.time * 0.5f, 0.2f);
-            GUI.color = new Color(1f, 0.3f, 0f, alpha);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = oldColor;
+            // Removed orange pulsing overlay as requested
         }
 
 
