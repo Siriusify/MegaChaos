@@ -1,0 +1,14 @@
+/usr/share/dotnet/sdk/10.0.104/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.EolTargetFrameworks.targets(32,5): warning NETSDK1138: The target framework 'net6.0' is out of support and will not receive security updates in the future. Please refer to https://aka.ms/dotnet-core-support for more information about the support policy. [/home/cuyar/.gemini/antigravity/brain/327eb751-4068-43e3-9ff9-797a2986f3a7/scratch/Dumper/Dumper.csproj]
+/usr/share/dotnet/sdk/10.0.104/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.EolTargetFrameworks.targets(32,5): warning NETSDK1138: The target framework 'net6.0' is out of support and will not receive security updates in the future. Please refer to https://aka.ms/dotnet-core-support for more information about the support policy. [/home/cuyar/.gemini/antigravity/brain/327eb751-4068-43e3-9ff9-797a2986f3a7/scratch/Dumper/Dumper.csproj]
+/usr/share/dotnet/sdk/10.0.104/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.EolTargetFrameworks.targets(32,5): warning NETSDK1138: The target framework 'net6.0' is out of support and will not receive security updates in the future. Please refer to https://aka.ms/dotnet-core-support for more information about the support policy. [/home/cuyar/.gemini/antigravity/brain/327eb751-4068-43e3-9ff9-797a2986f3a7/scratch/Dumper/Dumper.csproj]
+
+MyPlayer: Assets.Scripts.Actors.Player.MyPlayer
+  prop:  PlayerRenderer playerRenderer
+  prop:  PlayerMovement playerMovement
+Unhandled exception. System.IO.FileNotFoundException: Could not load file or assembly 'UnityEngine.ParticleSystemModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'. The system cannot find the file specified.
+
+File name: 'UnityEngine.ParticleSystemModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+   at System.Signature.GetSignature(Void* pCorSig, Int32 cCorSig, RuntimeFieldHandleInternal fieldHandle, IRuntimeMethodInfo methodHandle, RuntimeType declaringType)
+   at System.Reflection.RuntimePropertyInfo.get_Signature()
+   at System.Reflection.RuntimePropertyInfo.get_PropertyType()
+   at Program.Main() in /home/cuyar/.gemini/antigravity/brain/327eb751-4068-43e3-9ff9-797a2986f3a7/scratch/Dumper/Program.cs:line 24

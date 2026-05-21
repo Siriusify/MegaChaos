@@ -68,6 +68,7 @@ public sealed class Main : MelonMod
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.VirusEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.TimeExtenderEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ClearEffectsEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.FloorIsLavaEffect());
         // --- New effects ---
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.LightsOutEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.RainbowEffect());
