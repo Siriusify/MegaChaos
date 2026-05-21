@@ -61,9 +61,28 @@ namespace MegaChaos.Services.Chaos.Effects
                     var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
                     Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
                     
-                    // Start below the floor, target is center of bounds (approx 12 units high)
-                    _startY = pPos.y - 6f;
-                    _targetY = pPos.y + 12f;
+                    float boundsMinY = pPos.y - 6f;
+                    float boundsCenterY = pPos.y + 24f;
+
+                    if (officialLava != null)
+                    {
+                        try
+                        {
+                            var renderer = officialLava.GetComponent(typeof(Renderer)) as Renderer;
+                            if (renderer != null)
+                            {
+                                boundsMinY = renderer.bounds.min.y;
+                                boundsCenterY = renderer.bounds.center.y;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    // User requested formula for start: -Bounds.min.y - 5
+                    _startY = -boundsMinY - 5f;
+                    
+                    // User requested formula for target: Bounds.center.y / 2
+                    _targetY = boundsCenterY / 2f;
                     
                     if (officialLava != null)
                     {
