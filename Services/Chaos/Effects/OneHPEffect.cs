@@ -15,7 +15,7 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             try
             {
-                var playerType = GameReflection.FindType("Player");
+                var playerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
                 if (playerType != null)
                 {
                     var instance = GameReflection.GetStaticMember(playerType, "Instance") 
@@ -23,7 +23,8 @@ namespace MegaChaos.Services.Chaos.Effects
 
                     if (instance != null)
                     {
-                        var playerHealth = GameReflection.GetMember(instance, "playerHealth");
+                        var inventory = GameReflection.GetMember(instance, "inventory");
+                        var playerHealth = GameReflection.GetMember(inventory, "playerHealth");
                         if (playerHealth != null)
                         {
                             var combined = GameReflection.InvokeInstance(playerHealth, "GetCombinedHp", Type.EmptyTypes);

@@ -38,7 +38,8 @@ namespace MegaChaos.Services.Chaos.Effects
 
                 // 1. Find Lava Prefab/Object in memory
                 GameObject lavaPrefab = null;
-                var allGos = GameReflection.FindObjectsOfTypeAll(typeof(GameObject));
+                var goType = GameReflection.FindType("UnityEngine.GameObject", "UnityEngine", "UnityEngine.CoreModule");
+                var allGos = GameReflection.FindObjectsOfTypeAll(goType);
                 if (allGos != null)
                 {
                     foreach (var obj in allGos)
