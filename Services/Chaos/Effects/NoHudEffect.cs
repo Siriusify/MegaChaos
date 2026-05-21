@@ -12,14 +12,14 @@ namespace MegaChaos.Services.Chaos.Effects
         public float DefaultDuration => 30f;
 
         private static readonly string[] TargetPaths = {
-            "GameUI/GameUI/HUD/Minimap/Border",
-            "GameUI/GameUI/HUD/Minimap/MapRenderer",
-            "GameUI/PauseUI/Main/Inventory",
-            "GameUI/PauseUI/Main/W_Stats",
-            "GameUI/GameUI/HUD",
-            "GameUI/GameUI/EncounterWindows/InventoryOverlay/W_Inventory",
-            "GameUI/GameUI/EncounterWindows/InventoryOverlay/W_Stats (1)",
-            "AlwaysManagers/AlwaysUI/Canvas/Debug"
+            "HUD/Minimap/Border",
+            "HUD/Minimap/MapRenderer",
+            "PauseUI/Main/Inventory",
+            "PauseUI/Main/W_Stats",
+            "GameUI/HUD",
+            "InventoryOverlay/W_Inventory",
+            "InventoryOverlay/W_Stats (1)",
+            "AlwaysUI/Canvas/Debug"
         };
 
         private readonly List<GameObject> _hiddenObjects = new();

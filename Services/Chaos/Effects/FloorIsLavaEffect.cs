@@ -61,12 +61,53 @@ namespace MegaChaos.Services.Chaos.Effects
                     var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
                     Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
                     
-                    // The bounds of TheFloorIsLava object are originally very far away (Y = -353)
-                    // So using its bounds directly causes the lava to spawn in the sky!
-                    // We must use reliable relative positions to the player.
-                    _startY = pPos.y - 6f;
-                    _targetY = pPos.y + 12f;
+                    // Calculate global map bounds
+                    float mapMinY = pPos.y - 6f;
+                    float mapCenterY = pPos.y + 24f;
                     
+                    try
+                    {
+                        var renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+                        if (renderers != null && renderers.Length > 0)
+                        {
+                            bool initialized = false;
+                            Bounds mapBounds = new Bounds();
+                            
+                            foreach (var r in renderers)
+                            {
+                                if (r != null && r.gameObject != null && 
+                                    !r.gameObject.name.Contains("Lava") && 
+                                    !r.gameObject.name.Contains("Player"))
+                                {
+                                    if (!initialized)
+                                    {
+                                        mapBounds = r.bounds;
+                                        initialized = true;
+                                    }
+                                    else
+                                    {
+                                        mapBounds.Encapsulate(r.bounds);
+                                    }
+                                }
+                            }
+                            
+                            if (initialized)
+                            {
+                                mapMinY = mapBounds.min.y;
+                                mapCenterY = mapBounds.center.y;
+                            }
+                        }
+                    }
+                    catch { }
+
+                    // User requested formula for start: -(mapMinY + 5)
+                    _startY = -(mapMinY + 5f);
+                    
+                    // User requested target: Bounds.center.y / 2
+                    _targetY = mapCenterY / 2f;
+                    
+                    MegaChaos.Main.Msg($"[FloorIsLava] Map MinY: {mapMinY}, CenterY: {mapCenterY} -> StartY: {_startY}, TargetY: {_targetY}");
+
                     if (officialLava != null)
                     {
                         officialLava.transform.position = new Vector3(pPos.x, _startY, pPos.z);
