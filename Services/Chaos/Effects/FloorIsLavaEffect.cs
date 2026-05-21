@@ -36,9 +36,8 @@ namespace MegaChaos.Services.Chaos.Effects
                     _playerHealth = GameReflection.GetMember(inventory, "playerHealth");
                 }
 
-                // 1. Check for native "TheFloorIsLava" object first
+                // 1. Check for Lava prefab in memory
                 var allGos = Resources.FindObjectsOfTypeAll<GameObject>();
-                GameObject theFloorIsLavaNative = null;
                 GameObject lavaPrefab = null;
 
                 if (allGos != null)
@@ -47,13 +46,13 @@ namespace MegaChaos.Services.Chaos.Effects
                     {
                         if (go == null) continue;
                         
+                        // Ignore the native challenge controller
                         if (go.name.Equals("TheFloorIsLava", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        if (lavaPrefab == null && go.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
                         {
-                            theFloorIsLavaNative = go;
-                        }
-                        else if (lavaPrefab == null && go.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            if (go.GetComponent<Renderer>() != null || go.GetComponent("Collider") != null)
+                            if (go.GetComponent<Renderer>() != null)
                             {
                                 lavaPrefab = go;
                             }
@@ -61,62 +60,65 @@ namespace MegaChaos.Services.Chaos.Effects
                     }
                 }
 
-                if (theFloorIsLavaNative != null)
+                // 2. Fallback if Lava is not found
+                bool isFakeLava = false;
+                if (lavaPrefab == null)
                 {
-                    NotificationService.Show("Native Lava Floor activated!", null, NotificationService.NotificationType.Warning);
-                    theFloorIsLavaNative.SetActive(true);
-                    _spawnedLava.Add(theFloorIsLavaNative); // Store it to disable later
+                    NotificationService.Show("Lava prefab not found in memory! Creating fake lava...", null, NotificationService.NotificationType.Warning);
+                    lavaPrefab = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                    lavaPrefab.name = "MegaChaos_FakeLava";
+                    var renderer = lavaPrefab.GetComponent<Renderer>();
+                    if (renderer != null && renderer.material != null)
+                    {
+                        renderer.material.color = new Color(1f, 0.4f, 0f, 0.8f); // Orange-red, slightly transparent
+                        // Make it unlit if possible so it glows, but we can't easily change shader without assetbundle.
+                    }
+                    var col = lavaPrefab.GetComponent("Collider");
+                    if (col != null) GameObject.Destroy(col);
+                    isFakeLava = true;
                 }
-                else
+
+                // 3. Spawn Lava around the map
+                if (player != null)
                 {
-                    // 2. Fallback if Lava is not found
-                    if (lavaPrefab == null)
-                    {
-                        NotificationService.Show("Lava prefab not found in memory! Creating fake lava...", null, NotificationService.NotificationType.Warning);
-                        lavaPrefab = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                        lavaPrefab.name = "MegaChaos_FakeLava";
-                        var renderer = lavaPrefab.GetComponent<Renderer>();
-                        if (renderer != null && renderer.material != null)
-                        {
-                            renderer.material.color = new Color(1f, 0.4f, 0f, 0.9f); // Orange-red
-                        }
-                        var col = lavaPrefab.GetComponent("Collider");
-                        if (col != null) GameObject.Destroy(col);
-                    }
+                    var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
+                    Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
+                    
+                    // Place it JUST above the player's current Y so it clips above the ground
+                    float floorY = pPos.y + 0.15f; 
 
-                    // 3. Spawn Lava around the map
-                    if (player != null)
+                    for (int x = -2; x <= 2; x++)
                     {
-                        var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
-                        Vector3 pPos = playerGo != null ? playerGo.transform.position : Vector3.zero;
-                        float floorY = pPos.y - 0.5f; // Guess the floor height
-
-                        // Create a massive lava floor
-                        for (int x = -1; x <= 1; x++)
+                        for (int z = -2; z <= 2; z++)
                         {
-                            for (int z = -1; z <= 1; z++)
+                            var clone = GameObject.Instantiate(lavaPrefab);
+                            clone.name = "MegaChaos_SpawnedLava";
+                            clone.transform.position = new Vector3(pPos.x + (x * 30f), floorY, pPos.z + (z * 30f));
+                            
+                            if (isFakeLava)
                             {
-                                var clone = GameObject.Instantiate(lavaPrefab);
-                                clone.name = "MegaChaos_SpawnedLava";
-                                clone.transform.position = new Vector3(pPos.x + (x * 50f), floorY, pPos.z + (z * 50f));
-                                
-                                // Scale it huge so it covers the map
-                                clone.transform.localScale = new Vector3(20f, 1f, 20f);
-                                
-                                var col = clone.GetComponent("Collider");
-                                if (col != null) GameObject.Destroy(col); // ensure it doesn't block walking
-
-                                clone.SetActive(true);
-                                _spawnedLava.Add(clone);
+                                // A Unity plane is 10x10. Scale 3 = 30x30.
+                                clone.transform.localScale = new Vector3(3f, 1f, 3f);
                             }
+                            else
+                            {
+                                // If it's the real lava, scaling it might distort it, but we have to make it big
+                                clone.transform.localScale = new Vector3(5f, 1f, 5f);
+                            }
+                            
+                            var col = clone.GetComponent("Collider");
+                            if (col != null) GameObject.Destroy(col); // ensure it doesn't block walking
+
+                            clone.SetActive(true);
+                            _spawnedLava.Add(clone);
                         }
                     }
+                }
 
-                    if (lavaPrefab.name == "MegaChaos_FakeLava")
-                    {
-                        lavaPrefab.SetActive(false);
-                        GameObject.Destroy(lavaPrefab);
-                    }
+                if (isFakeLava)
+                {
+                    lavaPrefab.SetActive(false);
+                    GameObject.Destroy(lavaPrefab);
                 }
 
                 NotificationService.Show("THE FLOOR IS LAVA!", null, NotificationService.NotificationType.Warning);
