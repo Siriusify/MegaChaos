@@ -29,14 +29,15 @@ namespace MegaChaos.Services.Chaos.Effects
         private void GenerateNoise()
         {
             if (_noiseTex == null) return;
-            var pixels = new Color32[TexSize * TexSize];
-            for (int i = 0; i < pixels.Length; i++)
+            for (int y = 0; y < TexSize; y++)
             {
-                byte v = (byte)Random.Range(0, 255);
-                byte a = (byte)Random.Range(60, 140);
-                pixels[i] = new Color32(v, v, v, a);
+                for (int x = 0; x < TexSize; x++)
+                {
+                    float v = Random.Range(0f, 1f);
+                    float a = Random.Range(0.25f, 0.55f);
+                    _noiseTex.SetPixel(x, y, new Color(v, v, v, a));
+                }
             }
-            _noiseTex.SetPixels32(pixels);
             _noiseTex.Apply();
         }
 
@@ -53,10 +54,12 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnGUI()
         {
             if (_noiseTex == null) return;
+            float sw = Screen.width > 100 ? Screen.width : 1920f;
+            float sh = Screen.height > 100 ? Screen.height : 1080f;
+
             var old = GUI.color;
             GUI.color = Color.white;
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), _noiseTex,
-                ScaleMode.StretchToFill, true);
+            GUI.DrawTexture(new Rect(0, 0, sw, sh), _noiseTex, ScaleMode.StretchToFill, true);
             GUI.color = old;
         }
 

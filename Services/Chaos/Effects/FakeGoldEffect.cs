@@ -72,7 +72,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 }
 
                 string msg = _goldSeized > 0
-                    ? $"TAX AUDIT! -{_goldSeized} Gold stolen permanently!"
+                    ? $"TAX AUDIT! -{_goldSeized} Gold stolen!"
                     : "TAX AUDIT! Nothing to steal...";
                 NotificationService.Show(msg, null, NotificationService.NotificationType.Unlucky);
                 Main.Msg($"[TaxAudit] Seized {_goldSeized} gold, {_seizedItems.Count} item types. (fake, returns on end)");

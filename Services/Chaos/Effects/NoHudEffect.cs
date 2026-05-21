@@ -20,11 +20,12 @@ namespace MegaChaos.Services.Chaos.Effects
             int count = 0;
             try
             {
-                var behaviours = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
+                var behaviours = UnityEngine.Object.FindObjectsOfType(typeof(UnityEngine.MonoBehaviour));
                 if (behaviours != null)
                 {
-                    foreach (var b in behaviours)
+                    foreach (var obj in behaviours)
                     {
+                        var b = obj as Behaviour;
                         if (b == null) continue;
                         string typeName = b.GetType().Name;
                         bool match = false;

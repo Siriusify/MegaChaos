@@ -131,10 +131,10 @@ namespace MegaChaos.Services.Chaos.Effects
             }
             catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] statToTomes: " + ex.Message); }
 
-            // Yol 3: Resources.FindObjectsOfTypeAll<ScriptableObject>()
+            // Yol 3: Resources.FindObjectsOfTypeAll(typeof(ScriptableObject))
             try
             {
-                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.ScriptableObject>();
+                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll(typeof(UnityEngine.ScriptableObject));
                 if (allObjs != null)
                 {
                     var list = new List<object>();
@@ -246,7 +246,7 @@ namespace MegaChaos.Services.Chaos.Effects
             
             try
             {
-                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.ScriptableObject>();
+                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll(typeof(UnityEngine.ScriptableObject));
                 if (allObjs != null)
                 {
                     var list = new System.Collections.Generic.List<object>();

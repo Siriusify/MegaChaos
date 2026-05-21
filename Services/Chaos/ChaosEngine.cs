@@ -237,7 +237,7 @@ namespace MegaChaos.Services.Chaos
         {
             if (_overlaySlots.Count == 0 && _activeEffects.Count == 0) return;
 
-            if (!_overlayStylesReady) InitOverlayStyles();
+            if (!_overlayStylesReady || _barBgTex == null || _barFillTex == null) InitOverlayStyles();
             if (!_overlayStylesReady) return;
 
             // Build display list: active + fading slots (newest = bottom)
@@ -272,7 +272,7 @@ namespace MegaChaos.Services.Chaos
 
                 // ── Dark Background for readability ──────────────────────
                 GUI.color = new Color(0.1f, 0.1f, 0.1f, 0.6f * alpha);
-                GUI.DrawTexture(new Rect(startX - 10f, rowY - 5f, OverlayWidth + 20f, OverlayRowH), _barBgTex);
+                GUI.DrawTexture(new Rect(startX - 10f, rowY - 5f, OverlayWidth + 20f, OverlayRowH + 10f), _barBgTex);
 
                 // ── Name ─────────────────────────────────
                 var nameStyle = isFading ? _overlayFadeStyle : _overlayNameStyle;

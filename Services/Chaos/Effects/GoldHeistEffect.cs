@@ -62,7 +62,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 }
 
                 string msg = goldTaken > 0
-                    ? $"GOLD HEIST! -{goldTaken} Gold stolen permanently!"
+                    ? $"GOLD HEIST! -{goldTaken} Gold stolen!"
                     : "GOLD HEIST! Nothing to steal...";
                 NotificationService.Show(msg, null, NotificationService.NotificationType.Unlucky);
                 Main.Msg($"[GoldHeist] Took {goldTaken} gold, {itemTypesStolenCount} item types stolen.");
