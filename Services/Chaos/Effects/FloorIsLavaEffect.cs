@@ -52,7 +52,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     if (lavaPrefab == null)
                     {
                         var directLava = GameObject.Find("Lava");
-                        if (directLava != null && directLava.GetComponent<Renderer>() != null)
+                        if (directLava != null && directLava.GetComponent("Renderer") != null)
                         {
                             lavaPrefab = directLava;
                         }
@@ -70,11 +70,11 @@ namespace MegaChaos.Services.Chaos.Effects
                     NotificationService.Show("Lava prefab not found in memory! Creating fake lava...", null, NotificationService.NotificationType.Warning);
                     lavaPrefab = GameObject.CreatePrimitive(PrimitiveType.Plane);
                     lavaPrefab.name = "MegaChaos_FakeLava";
-                    var renderer = lavaPrefab.GetComponent<Renderer>();
-                    if (renderer != null && renderer.material != null)
+                    var renderer = lavaPrefab.GetComponent("Renderer");
+                    if (renderer != null)
                     {
-                        renderer.material.color = new Color(1f, 0.4f, 0f, 0.8f); // Orange-red, slightly transparent
-                        // Make it unlit if possible so it glows, but we can't easily change shader without assetbundle.
+                        var mat = GameReflection.GetMember(renderer, "material");
+                        if (mat != null) GameReflection.SetMember(mat, "color", new Color(1f, 0.4f, 0f, 0.8f));
                     }
                     var col = lavaPrefab.GetComponent("Collider");
                     if (col != null) GameObject.Destroy(col);
@@ -203,7 +203,7 @@ namespace MegaChaos.Services.Chaos.Effects
             
             if (parent.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                if (parent.GetComponent<Renderer>() != null)
+                if (parent.GetComponent("Renderer") != null)
                 {
                     return parent.gameObject;
                 }
