@@ -186,7 +186,16 @@ namespace MegaChaos.Services.Chaos.Effects
             catch { }
         }
 
-        public void OnGUI() { }
+        public void OnGUI() 
+        { 
+            // 100% reliable visual indicator: Tint the screen orange
+            var oldColor = GUI.color;
+            // Pulsing orange color
+            float alpha = 0.2f + Mathf.PingPong(Time.time * 0.5f, 0.2f);
+            GUI.color = new Color(1f, 0.3f, 0f, alpha);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
+            GUI.color = oldColor;
+        }
 
         private GameObject FindLavaRecursive(Transform parent)
         {
