@@ -98,7 +98,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     isFakeLava = true;
                 }
 
-                // 3. Spawn Lava around the map
+                // 3. Spawn ONE massive Lava to cover the map
                 if (player != null)
                 {
                     var playerGo = GameReflection.GetMember(player, "gameObject") as GameObject;
@@ -107,33 +107,39 @@ namespace MegaChaos.Services.Chaos.Effects
                     // Place it JUST above the player's current Y so it clips above the ground
                     float floorY = pPos.y + 0.15f; 
 
-                    for (int x = -2; x <= 2; x++)
+                    var clone = GameObject.Instantiate(lavaPrefab);
+                    clone.name = "MegaChaos_SpawnedLava";
+                    clone.transform.position = new Vector3(pPos.x, floorY, pPos.z);
+                    
+                    if (isFakeLava)
                     {
-                        for (int z = -2; z <= 2; z++)
-                        {
-                            var clone = GameObject.Instantiate(lavaPrefab);
-                            clone.name = "MegaChaos_SpawnedLava";
-                            clone.transform.position = new Vector3(pPos.x + (x * 30f), floorY, pPos.z + (z * 30f));
-                            
-                            if (isFakeLava)
-                            {
-                                // A Unity plane is 10x10. Scale 3 = 30x30.
-                                clone.transform.localScale = new Vector3(3f, 1f, 3f);
-                            }
-                            else
-                            {
-                                // If it's the real lava, scaling it might distort it, but we have to make it big
-                                clone.transform.localScale = new Vector3(5f, 1f, 5f);
-                            }
-                            
-                            // Don't destroy collider on clones, just ensure it's a trigger
-                            var cloneCol = clone.GetComponent("Collider");
-                            if (cloneCol != null) GameReflection.SetMember(cloneCol, "isTrigger", true);
-
-                            clone.SetActive(true);
-                            _spawnedLava.Add(clone);
-                        }
+                        clone.transform.localScale = new Vector3(30f, 1f, 30f); // 300x300 meters
                     }
+                    else
+                    {
+                        // Real lava might distort, but we need it big
+                        clone.transform.localScale = new Vector3(50f, 1f, 50f);
+                    }
+                    
+                    var cloneCol = clone.GetComponent("Collider");
+                    if (cloneCol != null) GameReflection.SetMember(cloneCol, "isTrigger", true);
+
+                    // UPDATE THE LAVA SCRIPT BOUNDS!
+                    var lavaComp = clone.GetComponent("Lava");
+                    if (lavaComp != null)
+                    {
+                        // Create a massive damage zone around the player
+                        Bounds newBounds = new Bounds(new Vector3(pPos.x, floorY, pPos.z), new Vector3(1000f, 20f, 1000f));
+                        GameReflection.SetMember(lavaComp, "bounds", newBounds);
+                        
+                        // Force damage and interval again just to be safe
+                        GameReflection.SetMember(lavaComp, "damage", 10f);
+                        GameReflection.SetMember(lavaComp, "damageInterval", 0.5f);
+                        GameReflection.SetMember(lavaComp, "isDamageZone", true);
+                    }
+
+                    clone.SetActive(true);
+                    _spawnedLava.Add(clone);
                 }
 
                 if (isFakeLava)
