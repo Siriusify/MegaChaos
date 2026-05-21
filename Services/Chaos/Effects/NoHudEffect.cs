@@ -50,17 +50,40 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             try
             {
-                var transforms = GameReflection.FindObjectsOfTypeAll(typeof(Transform));
-                if (transforms == null) return null;
-
-                foreach (var obj in transforms)
+                // 1. Search in all loaded scenes
+                for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
                 {
-                    var t = obj as Transform;
-                    if (t != null && GetFullPath(t).EndsWith(path, StringComparison.OrdinalIgnoreCase))
+                    var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                    if (!scene.isLoaded) continue;
+
+                    var roots = scene.GetRootGameObjects();
+                    foreach (var root in roots)
                     {
-                        return t.gameObject;
+                        var transforms = root.GetComponentsInChildren<Transform>(true);
+                        foreach (var t in transforms)
+                        {
+                            if (t != null && GetFullPath(t).EndsWith(path, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return t.gameObject;
+                            }
+                        }
                     }
                 }
+
+                // 2. Search in DontDestroyOnLoad by finding a known active object there
+                var alwaysMgr = GameObject.Find("AlwaysManagers");
+                if (alwaysMgr != null)
+                {
+                    var transforms = alwaysMgr.transform.root.GetComponentsInChildren<Transform>(true);
+                    foreach (var t in transforms)
+                    {
+                        if (t != null && GetFullPath(t).EndsWith(path, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return t.gameObject;
+                        }
+                    }
+                }
+
                 return null;
             }
             catch { return null; }
