@@ -8,60 +8,89 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_nohud";
         public string Name => "No HUD";
-        public string Description => "Health, XP, and gold bars disappear — but upgrade screens remain!";
+        public string Description => "All UI elements disappear. Good luck!";
         public float DefaultDuration => 30f;
 
-        private static readonly string[] HudTypeNames = { "InventoryHud", "XpAndGoldHUD" };
-        private readonly List<(Behaviour comp, bool wasEnabled)> _saved = new();
+        private static readonly string[] TargetPaths = {
+            "GameUI/GameUI/HUD/Minimap/Border",
+            "GameUI/GameUI/HUD/Minimap/MapRenderer",
+            "GameUI/PauseUI/Main/Inventory",
+            "GameUI/PauseUI/Main/W_Stats",
+            "GameUI/GameUI/HUD",
+            "GameUI/GameUI/EncounterWindows/InventoryOverlay/W_Inventory",
+            "GameUI/GameUI/EncounterWindows/InventoryOverlay/W_Stats (1)",
+            "AlwaysManagers/AlwaysUI/Canvas/Debug"
+        };
+
+        private readonly List<GameObject> _hiddenObjects = new();
 
         public void OnStart()
         {
-            _saved.Clear();
+            _hiddenObjects.Clear();
             int count = 0;
-            try
-            {
-                foreach (var target in HudTypeNames)
-                {
-                    var hudType = GameReflection.FindType(target);
-                    if (hudType == null) continue;
-                    
-                    var huds = GameReflection.FindObjectsOfType(hudType);
-                    if (huds == null) continue;
 
-                    foreach (var obj in huds)
-                    {
-                        var b = obj as Behaviour;
-                        if (b != null && b.enabled)
-                        {
-                            b.enabled = false;
-                            _saved.Add((b, true));
-                            count++;
-                            MegaChaos.Main.Msg($"[NoHud] Disabled: {target} on '{b.gameObject.name}'");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
+            foreach (var path in TargetPaths)
             {
-                MegaChaos.Main.Warn($"[NoHud] Error: {ex.Message}");
+                var obj = FindByPath(path);
+                if (obj != null)
+                {
+                    obj.SetActive(false);
+                    _hiddenObjects.Add(obj);
+                    count++;
+                }
             }
 
             if (count > 0)
-                NotificationService.Show($"No HUD! ({count} components hidden)", null, NotificationService.NotificationType.Warning);
+                NotificationService.Show($"No HUD! ({count} elements hidden)", null, NotificationService.NotificationType.Warning);
             else
-                NotificationService.Show("No HUD: No HUD found in this scene.", null, NotificationService.NotificationType.Unlucky);
+                NotificationService.Show("No HUD elements found to hide.", null, NotificationService.NotificationType.Unlucky);
         }
 
-        public void OnUpdate(float dt) { }
+        private GameObject FindByPath(string path)
+        {
+            try
+            {
+                string[] parts = path.Split('/');
+                if (parts.Length == 0) return null;
+                
+                GameObject current = GameObject.Find(parts[0]);
+                if (current == null) return null;
+                
+                for (int i = 1; i < parts.Length; i++)
+                {
+                    Transform child = current.transform.Find(parts[i]);
+                    if (child == null) return null;
+                    current = child.gameObject;
+                }
+                return current;
+            }
+            catch { return null; }
+        }
+
+        public void OnUpdate(float dt) 
+        { 
+            // Force disable them continuously in case the game tries to re-enable them (e.g. opening pause menu)
+            foreach (var obj in _hiddenObjects)
+            {
+                if (obj != null && obj.activeSelf)
+                {
+                    obj.SetActive(false);
+                }
+            }
+        }
+        
         public void OnGUI() { }
 
         public void OnEnd()
         {
-            foreach (var (comp, wasEnabled) in _saved)
+            foreach (var obj in _hiddenObjects)
             {
-                try { if (comp != null) comp.enabled = wasEnabled; } catch { }
+                if (obj != null)
+                {
+                    obj.SetActive(true);
+                }
             }
-            _saved.Clear();
+            _hiddenObjects.Clear();
             NotificationService.Show("HUD restored!", null, NotificationService.NotificationType.Reward);
         }
     }
