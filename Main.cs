@@ -62,6 +62,13 @@ public sealed class Main : MelonMod
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ExpCleanerEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.CantAttackEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.OneHitKOEffect());
+        // --- New effects ---
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.LightsOutEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.RainbowEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ConfusionEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ReverseGravityEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.VignetteEffect());
+        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.TvStaticEffect());
 
         if (DebugLoggingEnabled)
         {
