@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 
 namespace MegaChaos.Services.Chaos.Effects
@@ -31,13 +32,11 @@ namespace MegaChaos.Services.Chaos.Effects
                                 float hp = Convert.ToSingle(combined);
                                 if (hp > 1f)
                                 {
-                                    var enemyType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Enemies.Enemy",
-                                        "Assets.Scripts.Actors.Enemies.Enemy", "Enemy") ?? typeof(object);
-                                    
-                                    GameReflection.InvokeInstance(playerHealth, "DamagePlayerExternal",
-                                        new[] { typeof(float), typeof(float), typeof(Vector3), typeof(bool), typeof(string),
-                                                typeof(int),   typeof(int),   enemyType },
-                                        hp - 1f, 0f, Vector3.zero, true, "MegaChaos_OneHP", 0, 0, null);
+                                    var method = playerHealth.GetType().GetMethod("DamagePlayerExternal", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                                    if (method != null)
+                                    {
+                                        method.Invoke(playerHealth, new object[] { hp - 1f, 0f, Vector3.zero, true, "MegaChaos_OneHP", 0, 0, null });
+                                    }
                                     
                                     NotificationService.Show("CRITICAL CONDITION! 1 HP LEFT!", null, NotificationService.NotificationType.Unlucky);
                                     return;

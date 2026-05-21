@@ -60,7 +60,7 @@ namespace MegaChaos.Services.Chaos.Effects
 
         private void ApplyOneHitKO()
         {
-            // 1. Oyuncu HP = 1, Shield = 0
+            // 1. Oyuncu HP = 1
             if (_playerHealth != null)
             {
                 var combined = GameReflection.InvokeInstance(_playerHealth, "GetCombinedHp", Type.EmptyTypes);
@@ -69,15 +69,16 @@ namespace MegaChaos.Services.Chaos.Effects
                     float hp = Convert.ToSingle(combined);
                     if (hp > 1f)
                     {
-                        GameReflection.InvokeInstance(_playerHealth, "DamagePlayerExternal",
-                            new[] { typeof(float), typeof(float), typeof(Vector3), typeof(bool), typeof(string),
-                                    typeof(int),   typeof(int),   GameReflection.FindType("Il2CppAssets.Scripts.Actors.Enemies.Enemy","Assets.Scripts.Actors.Enemies.Enemy","Enemy") ?? typeof(object) },
-                            hp - 1f, 0f, Vector3.zero, true, "MegaChaos_OneHitKO", 0, 0, null);
+                        var method = _playerHealth.GetType().GetMethod("DamagePlayerExternal", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (method != null)
+                        {
+                            method.Invoke(_playerHealth, new object[] { hp - 1f, 0f, Vector3.zero, true, "MegaChaos_OneHitKO", 0, 0, null });
+                        }
                     }
                 }
             }
 
-            // 2. Tüm düşmanları 1 HP'ye çek
+            // 2. Tüm düşmanları 1 HP'ye çek (veya canlarını çok azalt)
             if (_enemyType == null) return;
             try
             {
@@ -91,15 +92,13 @@ namespace MegaChaos.Services.Chaos.Effects
                     var dead = GameReflection.InvokeInstance(obj, "IsDead", Type.EmptyTypes);
                     if (dead != null && (bool)dead) continue;
 
-                    var hpRatio = GameReflection.InvokeInstance(obj, "GetHpRatio", Type.EmptyTypes);
-                    if (hpRatio == null) continue;
-                    float ratio = Convert.ToSingle(hpRatio);
-                    if (ratio <= 0.01f) continue; // Zaten ölmek üzere
-
-                    if (ratio > 0.02f)
-                    {
-                        GameReflection.InvokeInstance(obj, "Heal", new[] { typeof(int) }, -999999);
-                    }
+                    // Düşmanların canını 1 yapmak için scale çarpanını sıfıra yaklaştır
+                    GameReflection.InvokeInstance(obj, "SetSwarmMultiplierHp", new[] { typeof(float) }, 0.00001f);
+                    
+                    // Alternatif olarak, eğer field isimlerini biliyorsak doğrudan canı 1'e ayarlayabiliriz.
+                    try { GameReflection.SetMember(obj, "hp", 1f); } catch { }
+                    try { GameReflection.SetMember(obj, "_hp", 1f); } catch { }
+                    try { GameReflection.SetMember(obj, "currentHp", 1f); } catch { }
                 }
             }
             catch { }

@@ -116,36 +116,28 @@ namespace MegaChaos.Services.Chaos.Effects
 
             foreach (var win in _windows)
             {
-                // Unity GUI.Window kullanımı: ID gerektirir
-                win.Rect = GUI.Window(win.Id, win.Rect, DrawWindowContents, win.Title, _boxStyle);
+                // GUI.Window in IL2CPP throws delegate MissingMethodException
+                // Draw a simple box mimicking a window
+                GUI.Box(win.Rect, win.Title, _boxStyle);
+                DrawWindowContents(win);
             }
 
             GUI.color = oldColor;
         }
 
-        private void DrawWindowContents(int windowID)
+        private void DrawWindowContents(ErrorWindow target)
         {
-            // Find window
-            ErrorWindow target = null;
-            foreach (var w in _windows)
-            {
-                if (w.Id == windowID) { target = w; break; }
-            }
-
             if (target != null)
             {
-                // Draw message
                 var style = new GUIStyle(GUI.skin.label);
                 style.wordWrap = true;
                 style.normal.textColor = Color.white;
                 
-                // Kırmızı bir error ikonu gibi bir şey de çizilebilir ama elimizde yok, metin yeterli.
-                GUI.Label(new Rect(10, 30, target.Rect.width - 20, target.Rect.height - 70), target.Message, style);
+                GUI.Label(new Rect(target.Rect.x + 10, target.Rect.y + 30, target.Rect.width - 20, target.Rect.height - 70), target.Message, style);
 
-                // Sahte bir OK butonu
-                if (GUI.Button(new Rect(target.Rect.width / 2 - 40, target.Rect.height - 35, 80, 25), "OK"))
+                if (GUI.Button(new Rect(target.Rect.x + target.Rect.width / 2 - 40, target.Rect.y + target.Rect.height - 35, 80, 25), "OK"))
                 {
-                    target.TimeLeft = 0; // Kapat
+                    target.TimeLeft = 0; 
                 }
             }
         }
