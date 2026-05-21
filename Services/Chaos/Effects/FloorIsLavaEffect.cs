@@ -52,7 +52,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     if (lavaPrefab == null)
                     {
                         var directLava = GameObject.Find("Lava");
-                        if (directLava != null && directLava.GetComponent("Renderer") != null)
+                        if (directLava != null)
                         {
                             lavaPrefab = directLava;
                         }
@@ -70,16 +70,8 @@ namespace MegaChaos.Services.Chaos.Effects
                     NotificationService.Show("Lava prefab not found in memory! Creating fake lava...", null, NotificationService.NotificationType.Warning);
                     lavaPrefab = GameObject.CreatePrimitive(PrimitiveType.Plane);
                     lavaPrefab.name = "MegaChaos_FakeLava";
-                    var renderer = lavaPrefab.GetComponent("Renderer");
-                    if (renderer != null)
-                    {
-                        var mat = GameReflection.GetMember(renderer, "material");
-                        if (mat != null) GameReflection.SetMember(mat, "color", new Color(1f, 0.4f, 0f, 0.8f));
-                    }
                     
-                    // We rely on OnUpdate loop for Fake Lava damage, so we don't need to add the Lava script.
-                    var col = lavaPrefab.GetComponent("Collider");
-                    if (col != null) GameReflection.SetMember(col, "isTrigger", true); // Don't block walking, but allow Lava script to detect touch
+                    // We don't touch Renderer or Collider via GetComponent to avoid ReadOnlySpan crash!
                     isFakeLava = true;
                 }
 
@@ -106,22 +98,8 @@ namespace MegaChaos.Services.Chaos.Effects
                         clone.transform.localScale = new Vector3(50f, 1f, 50f);
                     }
                     
-                    var cloneCol = clone.GetComponent("Collider");
-                    if (cloneCol != null) GameReflection.SetMember(cloneCol, "isTrigger", true);
-
-                    // UPDATE THE LAVA SCRIPT BOUNDS!
-                    var lavaComp = clone.GetComponent("Lava");
-                    if (lavaComp != null)
-                    {
-                        // Create a massive damage zone around the player
-                        Bounds newBounds = new Bounds(new Vector3(pPos.x, floorY, pPos.z), new Vector3(1000f, 20f, 1000f));
-                        GameReflection.SetMember(lavaComp, "bounds", newBounds);
-                        
-                        // Force damage and interval again just to be safe
-                        GameReflection.SetMember(lavaComp, "damage", 10f);
-                        GameReflection.SetMember(lavaComp, "damageInterval", 0.5f);
-                        GameReflection.SetMember(lavaComp, "isDamageZone", true);
-                    }
+                    // We DO NOT update Bounds or Collider via GetComponent to avoid ReadOnlySpan crash!
+                    // Our custom ApplyDamageIfOnFloor method in OnUpdate will handle all damage!
 
                     clone.SetActive(true);
                     _spawnedLava.Add(clone);
@@ -212,10 +190,9 @@ namespace MegaChaos.Services.Chaos.Effects
             
             if (parent.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                if (parent.GetComponent("Renderer") != null)
-                {
-                    return parent.gameObject;
-                }
+                // Just return the object if it has Lava in its name.
+                // Avoid using GetComponent("Renderer") as it triggers ReadOnlySpan exception in Il2CppInterop.
+                return parent.gameObject;
             }
             
             for (int i = 0; i < parent.childCount; i++)
