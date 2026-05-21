@@ -76,8 +76,25 @@ namespace MegaChaos.Services.Chaos.Effects
                         var mat = GameReflection.GetMember(renderer, "material");
                         if (mat != null) GameReflection.SetMember(mat, "color", new Color(1f, 0.4f, 0f, 0.8f));
                     }
+                    
+                    // Add native Lava component
+                    try
+                    {
+                        var lavaComp = lavaPrefab.AddComponent<global::Lava>(); // Try to add native Lava
+                        if (lavaComp != null)
+                        {
+                            // Configure it
+                            GameReflection.SetMember(lavaComp, "damage", 10f);
+                            GameReflection.SetMember(lavaComp, "damageInterval", 0.5f);
+                            GameReflection.SetMember(lavaComp, "isDamageZone", true);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MegaChaos.Main.Warn("[FloorIsLava] Could not add native Lava component: " + ex.Message);
+                    }
                     var col = lavaPrefab.GetComponent("Collider");
-                    if (col != null) GameObject.Destroy(col);
+                    if (col != null) GameReflection.SetMember(col, "isTrigger", true); // Don't block walking, but allow Lava script to detect touch
                     isFakeLava = true;
                 }
 
@@ -109,8 +126,9 @@ namespace MegaChaos.Services.Chaos.Effects
                                 clone.transform.localScale = new Vector3(5f, 1f, 5f);
                             }
                             
-                            var col = clone.GetComponent("Collider");
-                            if (col != null) GameObject.Destroy(col); // ensure it doesn't block walking
+                            // Don't destroy collider on clones, just ensure it's a trigger
+                            var cloneCol = clone.GetComponent("Collider");
+                            if (cloneCol != null) GameReflection.SetMember(cloneCol, "isTrigger", true);
 
                             clone.SetActive(true);
                             _spawnedLava.Add(clone);
