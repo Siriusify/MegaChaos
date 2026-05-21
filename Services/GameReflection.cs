@@ -155,13 +155,20 @@ internal static class GameReflection
             {
                 types = assembly.GetTypes();
             }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types = ex.Types;
+            }
             catch
             {
                 continue;
             }
 
+            if (types == null) continue;
+
             foreach (var type in types)
             {
+                if (type == null) continue;
                 if (type.FullName == typeName || type.Name == typeName)
                     return type;
             }

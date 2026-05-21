@@ -131,16 +131,20 @@ namespace MegaChaos.Services.Chaos.Effects
             }
             catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] statToTomes: " + ex.Message); }
 
-            // Yol 3: UnityEngine.Resources.FindObjectsOfTypeAll<TomeData>()
+            // Yol 3: GameReflection.FindObjectsOfTypeAll
             try
             {
-                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll<TomeData>();
-                if (allObjs != null && allObjs.Length > 0)
+                var tomeDataType = GameReflection.FindType("TomeData", "Il2Cpp.TomeData");
+                if (tomeDataType != null)
                 {
-                    var list = new System.Collections.Generic.List<object>();
-                    foreach (var obj in allObjs) if (obj != null) list.Add(obj);
-                    MegaChaos.Main.Msg($"[RandomTome] Resources yolu: {list.Count} TomeData bulundu");
-                    if (list.Count > 0) return list[_rng.Next(list.Count)];
+                    var allObjs = GameReflection.FindObjectsOfTypeAll(tomeDataType);
+                    if (allObjs != null)
+                    {
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (var obj in allObjs) if (obj != null) list.Add(obj);
+                        MegaChaos.Main.Msg($"[RandomTome] Resources yolu: {list.Count} TomeData bulundu");
+                        if (list.Count > 0) return list[_rng.Next(list.Count)];
+                    }
                 }
             }
             catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] Resources: " + ex.Message); }
@@ -242,12 +246,16 @@ namespace MegaChaos.Services.Chaos.Effects
             
             try
             {
-                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll<TomeData>();
-                if (allObjs != null && allObjs.Length > 0)
+                var tomeDataType = GameReflection.FindType("TomeData", "Il2Cpp.TomeData");
+                if (tomeDataType != null)
                 {
-                    var list = new System.Collections.Generic.List<object>();
-                    foreach (var obj in allObjs) if (obj != null) list.Add(obj);
-                    if (list.Count > 0) return list[new System.Random().Next(list.Count)];
+                    var allObjs = GameReflection.FindObjectsOfTypeAll(tomeDataType);
+                    if (allObjs != null)
+                    {
+                        var list = new System.Collections.Generic.List<object>();
+                        foreach (var obj in allObjs) if (obj != null) list.Add(obj);
+                        if (list.Count > 0) return list[new System.Random().Next(list.Count)];
+                    }
                 }
             }
             catch { }
