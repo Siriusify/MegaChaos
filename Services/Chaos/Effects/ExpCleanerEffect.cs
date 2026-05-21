@@ -14,46 +14,44 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Id => "effect_expcleaner";
         public string Name => "EXP Vacuum";
         public string Description => "Haritadaki tüm XP toplarını anında kendine çekersin!";
-        public float DefaultDuration => 0f; // anlık
+        public float DefaultDuration => 30f;
+
+        private float _timer;
+        private const float PullInterval = 0.5f;
 
         public void OnStart()
         {
-            try
-            {
-                var managerType = GameReflection.FindType("PickupManager");
-                if (managerType == null)
-                {
-                    NotificationService.Show("EXP Vacuum: System not found.", null, NotificationService.NotificationType.Unlucky);
-                    return;
-                }
+            _timer = 0f;
+            NotificationService.Show("EXP Vacuum activated! Pulling XP... 🌀", null, NotificationService.NotificationType.Reward);
+        }
 
-                var instance = GameReflection.GetStaticMember(managerType, "Instance");
-                if (instance == null)
-                {
-                    // Fallback to get_Instance prop just in case
-                    instance = GameReflection.GetStaticMember(managerType, "get_Instance");
-                }
-
-                if (instance != null)
-                {
-                    GameReflection.InvokeInstance(instance, "PickupAllXp", Type.EmptyTypes);
-                    NotificationService.Show("EXP Vacuum: All XP pulled towards you! 🌀", null, NotificationService.NotificationType.Reward);
-                    MegaChaos.Main.Msg("[ExpCleaner] Invoked PickupManager.Instance.PickupAllXp successfully.");
-                }
-                else
-                {
-                    NotificationService.Show("EXP Vacuum: Active manager not found.", null, NotificationService.NotificationType.Unlucky);
-                }
-            }
-            catch (Exception ex)
+        public void OnUpdate(float dt)
+        {
+            _timer += dt;
+            if (_timer >= PullInterval)
             {
-                MegaChaos.Main.Error("[ExpCleaner] Error: " + ex.Message + "\n" + ex.StackTrace);
-                NotificationService.Show("EXP Vacuum failed.", null, NotificationService.NotificationType.Unlucky);
+                _timer = 0f;
+                try
+                {
+                    var managerType = GameReflection.FindType("PickupManager");
+                    if (managerType != null)
+                    {
+                        var instance = GameReflection.GetStaticMember(managerType, "Instance") 
+                                       ?? GameReflection.GetStaticMember(managerType, "get_Instance");
+
+                        if (instance != null)
+                            GameReflection.InvokeInstance(instance, "PickupAllXp", Type.EmptyTypes);
+                    }
+                }
+                catch { }
             }
         }
 
-        public void OnUpdate(float dt) { }
         public void OnGUI() { }
-        public void OnEnd() { }
+
+        public void OnEnd()
+        {
+            NotificationService.Show("EXP Vacuum ended.", null, NotificationService.NotificationType.Warning);
+        }
     }
 }

@@ -29,6 +29,7 @@ namespace MegaChaos.Services.Chaos
         private static Camera _cam;
         private static bool _baseCapured;
         private static float _baseFov;
+        private static float _baseOrtho;
         private static Vector3 _basePos;
         private static Quaternion _baseRot;
 
@@ -70,7 +71,19 @@ namespace MegaChaos.Services.Chaos
                 totalRoll      += d.RollDeg;
             }
 
-            _cam.fieldOfView         = (_baseFov + totalFovOffset) * totalFovMult;
+            if (_cam.orthographic)
+            {
+                // Orthographic kamerada FOV yerine Size değişir.
+                // _baseFov burada aslında base orthographicSize'ı temsil etmeli,
+                // ama biz onu EnsureBase() içinde fieldOfView olarak almıştık.
+                // O yüzden EnsureBase'i ve burayı orthographic destekleyecek şekilde güncelledik.
+                _cam.orthographicSize = (_baseOrtho + totalFovOffset / 5f) * totalFovMult;
+            }
+            else
+            {
+                _cam.fieldOfView = (_baseFov + totalFovOffset) * totalFovMult;
+            }
+            
             _cam.transform.localPosition = _basePos + totalPos;
             _cam.transform.localRotation = _baseRot * Quaternion.Euler(0f, 0f, totalRoll);
         }
@@ -84,6 +97,7 @@ namespace MegaChaos.Services.Chaos
             _cam = Camera.main;
             if (_cam == null) return;
             _baseFov       = _cam.fieldOfView;
+            _baseOrtho     = _cam.orthographicSize;
             _basePos       = _cam.transform.localPosition;
             _baseRot       = _cam.transform.localRotation;
             _baseCapured   = true;
@@ -93,6 +107,7 @@ namespace MegaChaos.Services.Chaos
         {
             if (_cam == null || !_baseCapured) return;
             _cam.fieldOfView             = _baseFov;
+            _cam.orthographicSize        = _baseOrtho;
             _cam.transform.localPosition = _basePos;
             _cam.transform.localRotation = _baseRot;
         }

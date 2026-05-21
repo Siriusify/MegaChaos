@@ -82,6 +82,7 @@ namespace MegaChaos.Services.Chaos
             foreach (var state in _activeEffects)
                 state.Effect.OnEnd();
             _activeEffects.Clear();
+            _overlaySlots.Clear();
             _recentIds.Clear();
         }
 
@@ -263,6 +264,7 @@ namespace MegaChaos.Services.Chaos
                 bool isActive = s.EndFadeTimer < 0; // still running
                 bool isFading = !isActive && s.EndFadeTimer >= 0;
                 bool isPermanent = isActive && s.IsPermanent;
+                bool hideBar = s.Effect.Id.StartsWith("effect_fake"); // Fake effects hide bar
 
                 float alpha = 1f;
                 if (isFading)
@@ -281,7 +283,7 @@ namespace MegaChaos.Services.Chaos
                     s.Effect.Name, nameStyle);
 
                 // ── Progress bar ──────────────────────────
-                if (isActive && !isPermanent && s.TotalDuration > 0)
+                if (isActive && !isPermanent && s.TotalDuration > 0 && !hideBar)
                 {
                     float progress = Mathf.Clamp01(s.RemainingTime / s.TotalDuration);
                     float barY = rowY + OverlayRowH - OverlayBarH - 2f;

@@ -44,7 +44,7 @@ public sealed class Main : MelonMod
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.BlindnessEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.NoHudEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.UpsideDownEffect());
-        ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.MirrorXEffect());
+        // ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.MirrorXEffect()); // TODO: 2D sprites cause black map with negative scale
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.FovDistortionEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ZoomInEffect());
         ChaosEngine.Instance.RegisterEffect(new MegaChaos.Services.Chaos.Effects.ScreenShakeEffect());

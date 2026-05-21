@@ -63,13 +63,12 @@ namespace MegaChaos.Services.Chaos.Effects
             // 1. Oyuncu HP = 1, Shield = 0
             if (_playerHealth != null)
             {
-                var combined    = GameReflection.InvokeInstance(_playerHealth, "GetCombinedHp", Type.EmptyTypes);
+                var combined = GameReflection.InvokeInstance(_playerHealth, "GetCombinedHp", Type.EmptyTypes);
                 if (combined != null)
                 {
                     float hp = Convert.ToSingle(combined);
                     if (hp > 1f)
                     {
-                        // Damage uygula: hp - 1 kadar
                         GameReflection.InvokeInstance(_playerHealth, "DamagePlayerExternal",
                             new[] { typeof(float), typeof(float), typeof(Vector3), typeof(bool), typeof(string),
                                     typeof(int),   typeof(int),   GameReflection.FindType("Il2CppAssets.Scripts.Actors.Enemies.Enemy","Assets.Scripts.Actors.Enemies.Enemy","Enemy") ?? typeof(object) },
@@ -80,50 +79,45 @@ namespace MegaChaos.Services.Chaos.Effects
 
             // 2. Tüm düşmanları 1 HP'ye çek
             if (_enemyType == null) return;
-
-            var findMethod = typeof(UnityEngine.Object).GetMethod(
-                "FindObjectsOfType", BindingFlags.Static | BindingFlags.Public,
-                null, new[] { typeof(Type) }, null);
-            if (findMethod == null) return;
-
-            var enemies = findMethod.Invoke(null, new object[] { _enemyType }) as System.Collections.IEnumerable;
-            if (enemies == null) return;
-
-            foreach (var enemy in enemies)
+            try
             {
-                if (enemy == null) continue;
-                try
+                var roots = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+                foreach (var root in roots) TraverseAndApply(root.transform);
+            }
+            catch { }
+        }
+
+        private void TraverseAndApply(Transform t)
+        {
+            if (t == null) return;
+            try
+            {
+                var comps = t.GetComponents(typeof(UnityEngine.Behaviour));
+                if (comps != null)
                 {
-                    var dead = GameReflection.InvokeInstance(enemy, "IsDead", Type.EmptyTypes);
-                    if (dead != null && (bool)dead) continue;
-
-                    var hpRatio = GameReflection.InvokeInstance(enemy, "GetHpRatio", Type.EmptyTypes);
-                    if (hpRatio == null) continue;
-                    float ratio = Convert.ToSingle(hpRatio);
-                    if (ratio <= 0.01f) continue; // Zaten ölmek üzere
-
-                    // Kill yerine Heal(-BIG) değil — Damage metodunu çağırıyoruz
-                    // En güvenli: Kill ile bitirelim, ratio > 1/MAX dışındaki düşmanlar için
-                    // Aslında ratio = hp/maxHp — eğer ratio > çok küçük bir değerse hasar ver
-                    if (ratio > 0.02f) // Yaklaşık 1 HP değil
+                    foreach (var obj in comps)
                     {
-                        // Doğrudan hasar ver: maxHp kadar hasar → 0'a iner
-                        // DamageFromPlayerOther veya Damage kullanacağız ama DamageContainer gerekiyor
-                        // En basit: KillPlayer yerine "Kill" çağır
-                        // Hayır, Kill ölümü tetikler — biz sadece 1 HP'de tutmak istiyoruz
-                        // En doğrusu: hasar yeter miktarda vererek HP'yi 1'e getirmek
-                        // Ama damage container oluşturamıyoruz kolay... 
-                        // Alternatif: her 0.5 saniyede Kill() çağırmak ama bu ölüm ekranı açar
-                        // Gerçek çözüm: Enemy hp field'ını set etmek
-                        // Enemy sınıfında direkt hp field yokmuş gibi görünüyor ama Heal(negative) var mı?
-                        // Heal(int amount) — pozitif → HP artar. Negatif → azalır mı?
-                        // Deneyelim: GetHpRatio > 0.02 ise Heal(-BIG)
-                        // Bu çalışmıyorsa: Kill() ile direkt ölüm
-                        GameReflection.InvokeInstance(enemy, "Heal", new[] { typeof(int) }, -999999);
+                        var enemy = obj as MonoBehaviour;
+                        if (enemy == null || enemy.GetType().Name != "Enemy") continue;
+
+                        var dead = GameReflection.InvokeInstance(enemy, "IsDead", Type.EmptyTypes);
+                        if (dead != null && (bool)dead) continue;
+
+                        var hpRatio = GameReflection.InvokeInstance(enemy, "GetHpRatio", Type.EmptyTypes);
+                        if (hpRatio == null) continue;
+                        float ratio = Convert.ToSingle(hpRatio);
+                        if (ratio <= 0.01f) continue; // Zaten ölmek üzere
+
+                        if (ratio > 0.02f)
+                        {
+                            GameReflection.InvokeInstance(enemy, "Heal", new[] { typeof(int) }, -999999);
+                        }
                     }
                 }
-                catch { }
             }
+            catch { }
+
+            for (int i = 0; i < t.childCount; i++) TraverseAndApply(t.GetChild(i));
         }
 
         public void OnGUI() { }

@@ -9,19 +9,12 @@ namespace MegaChaos.Services.Chaos.Effects
         public string Description => "Oyun dünyası tamamen ters yüz olur, kontrolleriniz birbirine girer!";
         public float DefaultDuration => 30f;
         
-        private Camera _mainCamera;
-
         public void OnStart()
         {
-            _mainCamera = Camera.main;
-            if (_mainCamera != null)
-            {
-                var p = _mainCamera.projectionMatrix;
-                p.m11 = -p.m11; // Y eksenini ters çevir
-                p.m00 = -p.m00; // X eksenini ters çevir (Sol/Sağ da tersine dönsün)
-                _mainCamera.projectionMatrix = p;
-            }
+            // Kamera Stack üzerinden Z ekseninde 180 derece dönüş (Roll) uygula
+            CameraEffectStack.Register(Id, new CameraEffectStack.CameraDelta { RollDeg = 180f });
             MegaChaos.Main.Msg("[MegaChaos] World turned upside down!");
+            NotificationService.Show("UPSIDE DOWN!", null, NotificationService.NotificationType.Warning);
         }
         
         public void OnUpdate(float deltaTime) { }
@@ -30,11 +23,9 @@ namespace MegaChaos.Services.Chaos.Effects
         
         public void OnEnd()
         {
-            if (_mainCamera != null) 
-            {
-                _mainCamera.ResetProjectionMatrix();
-            }
+            CameraEffectStack.Unregister(Id);
             MegaChaos.Main.Msg("[MegaChaos] World back to normal.");
+            NotificationService.Show("Upside Down ended.", null, NotificationService.NotificationType.Reward);
         }
     }
 }
