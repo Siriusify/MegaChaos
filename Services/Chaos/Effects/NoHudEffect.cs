@@ -50,9 +50,12 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             try
             {
-                var transforms = UnityEngine.Resources.FindObjectsOfTypeAll<Transform>();
-                foreach (var t in transforms)
+                var transforms = GameReflection.FindObjectsOfTypeAll(typeof(Transform));
+                if (transforms == null) return null;
+
+                foreach (var obj in transforms)
                 {
+                    var t = obj as Transform;
                     if (t != null && GetFullPath(t) == path)
                     {
                         return t.gameObject;
