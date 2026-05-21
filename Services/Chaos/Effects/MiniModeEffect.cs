@@ -9,7 +9,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_minimode";
         public string Name => "Shrink Potion";
-        public string Description => "Karakterin cüce olur! Her şey kocaman görünür.";
+        public string Description => "Your character shrinks! Everything looks huge.";
         public float DefaultDuration => 30f;
 
         private Vector3 _originalScale;

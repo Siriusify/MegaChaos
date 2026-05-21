@@ -8,7 +8,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_virus";
         public string Name => "Computer Virus";
-        public string Description => "Bilgisayarına virüs girmiş gibi sürekli hata pencereleri çıkar!";
+        public string Description => "Spawns fake computer virus error windows all over your screen!";
         public float DefaultDuration => 30f;
 
         private class ErrorWindow
@@ -30,17 +30,23 @@ namespace MegaChaos.Services.Chaos.Effects
             "System Error", "Fatal Exception 0x00000008", 
             "Trojan.Win32 Detected", "Memory Leak", 
             "Blue Screen Imminent", "Critical Failure",
-            "Task Manager", "Windows Defender", "ERROR"
+            "Task Manager", "Windows Defender", "ERROR",
+            "Error 404", "Keyboard Not Found", "Low Disk Space",
+            "Firewall Disabled", "Corrupted Registry", "Warning!"
         };
 
         private readonly string[] _messages = {
-            "C:\\Windows\\System32 siliniyor...",
-            "Bellek yetersiz. Lütfen bazı uygulamaları kapatın.",
-            "Kritik bir donanım arızası tespit edildi.",
-            "Bilinmeyen bir yazılım ekran kartına erişmeye çalışıyor.",
-            "Sistem çökmek üzere. Kurtarmak için 10 saniyeniz var.",
-            "Uygulama yanıt vermiyor.",
-            "x0000007b adresindeki yönerge, x00000000 bellek adresine başvurdu."
+            "Deleting C:\\Windows\\System32...",
+            "Out of memory. Please close some applications.",
+            "A critical hardware failure has been detected.",
+            "Unknown software is trying to access your GPU.",
+            "System is about to crash. You have 10 seconds to recover.",
+            "Application is not responding.",
+            "Instruction at 0x0000007b referenced memory at 0x00000000.",
+            "Your license has expired.",
+            "CPU temperature exceeds 120°C.",
+            "Unauthorized access detected.",
+            "Failed to load user profile."
         };
 
         public void OnStart()
@@ -56,10 +62,10 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnUpdate(float dt)
         {
             _spawnTimer -= dt;
-            if (_spawnTimer <= 0f && _windows.Count < 25)
+            if (_spawnTimer <= 0f && _windows.Count < 20)
             {
                 SpawnWindow();
-                _spawnTimer = UnityEngine.Random.Range(0.2f, 1.5f);
+                _spawnTimer = UnityEngine.Random.Range(0.1f, 0.7f);
             }
 
             for (int i = _windows.Count - 1; i >= 0; i--)

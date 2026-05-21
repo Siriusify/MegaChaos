@@ -7,7 +7,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_drunk";
         public string Name => "Drunkness";
-        public string Description => "Kamera sendeliyor, FOV dalgalanıyor, adım atmak çilesiz!";
+        public string Description => "The camera staggers and the FOV waves — walking is a chore!";
         public float DefaultDuration => 30f;
 
         private float _elapsed;

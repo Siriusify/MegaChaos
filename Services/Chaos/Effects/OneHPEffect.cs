@@ -8,7 +8,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_onehp";
         public string Name => "Critical Condition";
-        public string Description => "Sağlığın aniden 1'e düşer! Bir sonraki hasar ölümcül olabilir.";
+        public string Description => "Your health suddenly drops to 1! The next hit could be fatal.";
         public float DefaultDuration => 0f; // Anlık efekt
 
         public void OnStart()

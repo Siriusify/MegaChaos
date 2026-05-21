@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_colortint";
         public string Name => "Color Filter";
-        public string Description => "Ekranın üzerine garip bir renk filtresi iner!";
+        public string Description => "A strange color filter covers the screen!";
         public float DefaultDuration => 30f;
 
         private Texture2D _tintTex;

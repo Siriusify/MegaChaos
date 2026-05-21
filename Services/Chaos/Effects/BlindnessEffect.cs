@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_blindness";
         public string Name => "Blindness";
-        public string Description => "Oyun dünyası kararır ama arayüz (HUD) görünmeye devam eder!";
+        public string Description => "The game world turns completely black but the UI stays visible!";
         public float DefaultDuration => 30f;
 
         private int _originalCullingMask;

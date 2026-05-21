@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_confusion";
         public string Name => "Confusion";
-        public string Description => "The camera slowly spins and rolls — which way is up?";
+        public string Description => "The camera flips upside down!";
         public float DefaultDuration => 30f;
 
         private float _elapsed;

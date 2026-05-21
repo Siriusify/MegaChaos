@@ -11,7 +11,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_fakegold";
         public string Name => "Tax Audit";
-        public string Description => "Your gold and excess items are seized for 5 seconds, then returned.";
+        public string Description => "Gives you some gold... but it's fake! It will be taken back.";
         public float DefaultDuration => 5f;
 
         private int _goldSeized;

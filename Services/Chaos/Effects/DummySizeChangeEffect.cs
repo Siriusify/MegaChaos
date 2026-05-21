@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_size_change";
         public string Name => "Growth Potion";
-        public string Description => "Karakteriniz 30 saniyeliğine dev gibi olur!";
+        public string Description => "Your character becomes a giant!";
         
         public float DefaultDuration => 30f;
 

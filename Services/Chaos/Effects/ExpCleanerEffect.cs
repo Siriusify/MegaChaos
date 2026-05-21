@@ -7,13 +7,16 @@ namespace MegaChaos.Services.Chaos.Effects
     /// EXP Süpürge:
     /// Haritadaki tüm XP nesnelerini toplamak için oyunun kendi dahili
     /// PickupManager.Instance.PickupAllXp() metodunu tetikler.
-    /// Bu sayede XP'ler oyuncuya doğru çekilir ve oyun içi standart toplama işlemi gerçekleşir.
+    /// EXP Vacuum:
+    /// Triggers the game's internal PickupManager.Instance.PickupAllXp() method 
+    /// to collect all XP objects on the map. This pulls the XP towards the player 
+    /// and triggers standard in-game collection logic.
     /// </summary>
     public class ExpCleanerEffect : IChaosEffect
     {
         public string Id => "effect_expcleaner";
         public string Name => "EXP Vacuum";
-        public string Description => "Haritadaki tüm XP toplarını anında kendine çekersin!";
+        public string Description => "Instantly pulls all XP orbs on the map to you!";
         public float DefaultDuration => 0f;
 
         public void OnStart()

@@ -7,7 +7,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_fov";
         public string Name => "Nausea";
-        public string Description => "Kamera görüş açısı (FOV) sürekli genişleyip daralarak baş döndürür!";
+        public string Description => "The camera FOV constantly expands and shrinks, making you dizzy!";
         public float DefaultDuration => 30f;
 
         private float _timer;

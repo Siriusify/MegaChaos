@@ -15,7 +15,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_dvd";
         public string Name => "DVD Screensaver";
-        public string Description => "Ekranın büyük kısmı simsiyah! Sadece DVD penceresinden görebilirsin.";
+        public string Description => "The screen goes black! You can only see through the bouncing DVD window.";
         public float DefaultDuration => 30f;
 
         private float _x, _y;

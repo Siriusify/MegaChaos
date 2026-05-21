@@ -7,7 +7,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_zoomin";
         public string Name => "Zoom In";
-        public string Description => "Kamera aniden çok yaklaşır, etraf görmek zorlaşır!";
+        public string Description => "The camera suddenly zooms in, making it hard to see around you!";
         public float DefaultDuration => 30f;
 
         private float _fovDelta; // negatif = yakınlaştır

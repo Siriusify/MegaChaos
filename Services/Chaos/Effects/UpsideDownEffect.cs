@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_upsidedown";
         public string Name => "Upside Down";
-        public string Description => "Oyun dünyası tamamen ters yüz olur, kontrolleriniz birbirine girer!";
+        public string Description => "The game world flips entirely, messing up your controls!";
         public float DefaultDuration => 30f;
         
         public void OnStart()

@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_lightsout";
         public string Name => "Lights Out";
-        public string Description => "Darkness falls! The screen fades to near-black. Good luck.";
+        public string Description => "The game goes completely dark, you can't see anything!";
         public float DefaultDuration => 30f;
 
         private Texture2D _darkTex;

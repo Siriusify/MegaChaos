@@ -162,6 +162,34 @@ namespace MegaChaos.Services.Chaos
             TriggerEffect(pool[UnityEngine.Random.Range(0, pool.Count)]);
         }
 
+        public void ExtendAllActive(float minMult, float maxMult)
+        {
+            float mult = UnityEngine.Random.Range(minMult, maxMult);
+            foreach (var state in _activeEffects)
+            {
+                if (!state.IsPermanent && state.TotalDuration > 0)
+                {
+                    state.RemainingTime *= mult;
+                    state.TotalDuration = Mathf.Max(state.TotalDuration, state.RemainingTime);
+                }
+            }
+        }
+
+        public void ClearActiveTimedEffects()
+        {
+            for (int i = _activeEffects.Count - 1; i >= 0; i--)
+            {
+                var state = _activeEffects[i];
+                if (!state.IsPermanent && state.TotalDuration > 0)
+                {
+                    state.Effect.OnEnd();
+                    state.EndFadeTimer = OverlayFadeTime;
+                    _overlaySlots.Add(state);
+                    _activeEffects.RemoveAt(i);
+                }
+            }
+        }
+
         public void TriggerEffect(IChaosEffect effect, float customDuration = -2f)
         {
             var profile = ProfileManager.ActiveProfile;
@@ -181,6 +209,23 @@ namespace MegaChaos.Services.Chaos
             _log.Insert(0, new ChaosLogEntry(effect.Name));
             if (_log.Count > 100) _log.RemoveAt(_log.Count - 1);
 
+            // Check if already active (stack duration)
+            var existing = _activeEffects.Find(s => s.Effect.Id == effect.Id);
+            if (existing != null)
+            {
+                if (durationToUse > 0)
+                {
+                    existing.RemainingTime += durationToUse;
+                    existing.TotalDuration = Mathf.Max(existing.TotalDuration, existing.RemainingTime);
+                }
+                effect.OnStart(); // Trigger again for initial impact
+                
+                // Move to top of active list (make it newest)
+                _activeEffects.Remove(existing);
+                _activeEffects.Insert(0, existing);
+                return;
+            }
+
             effect.OnStart();
 
             if (durationToUse > 0)
@@ -192,9 +237,7 @@ namespace MegaChaos.Services.Chaos
                     RemainingTime = durationToUse,
                     IsPermanent = false
                 };
-                _activeEffects.Add(state);
-                // Show in overlay immediately
-                AddToOverlaySlots(state);
+                _activeEffects.Insert(0, state); // Newest at top
             }
             else if (durationToUse == -1)
             {
@@ -205,12 +248,11 @@ namespace MegaChaos.Services.Chaos
                     RemainingTime = 0,
                     IsPermanent = true
                 };
-                _activeEffects.Add(state);
-                AddToOverlaySlots(state);
+                _activeEffects.Insert(0, state);
             }
             else
             {
-                // Instant effect: add to overlay as already-ended, with fade timer
+                // Instant effect
                 var state = new ActiveEffectState
                 {
                     Effect = effect,
@@ -220,17 +262,8 @@ namespace MegaChaos.Services.Chaos
                     EndFadeTimer = OverlayFadeTime
                 };
                 effect.OnEnd();
-                _overlaySlots.Add(state);
-                while (_overlaySlots.Count > 3) _overlaySlots.RemoveAt(0);
+                _overlaySlots.Insert(0, state);
             }
-        }
-
-        private void AddToOverlaySlots(ActiveEffectState state)
-        {
-            // Remove if already present, then add to end (newest last)
-            _overlaySlots.Remove(state);
-            _overlaySlots.Add(state);
-            while (_overlaySlots.Count > 3) _overlaySlots.RemoveAt(0);
         }
 
         // ── GTA-style overlay ─────────────────────────────────────────────
@@ -241,15 +274,12 @@ namespace MegaChaos.Services.Chaos
             if (!_overlayStylesReady || _barBgTex == null || _barFillTex == null) InitOverlayStyles();
             if (!_overlayStylesReady) return;
 
-            // Build display list: active + fading slots (newest = bottom)
+            // Build display list: newest active effects first, then fading slots
             var display = new List<ActiveEffectState>();
-            foreach (var s in _overlaySlots)
-                if (!display.Contains(s)) display.Add(s);
             foreach (var s in _activeEffects)
                 if (!display.Contains(s)) display.Add(s);
-
-            // Keep only last 3
-            while (display.Count > 3) display.RemoveAt(0);
+            foreach (var s in _overlaySlots)
+                if (!display.Contains(s)) display.Add(s);
 
             float screenW = Screen.width > 100 ? Screen.width : 1920f;
             float screenH = Screen.height > 100 ? Screen.height : 1080f;

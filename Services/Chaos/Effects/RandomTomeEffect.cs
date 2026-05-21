@@ -18,7 +18,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_randomtome";
         public string Name => "Tome Lottery";
-        public string Description => "Rastgele kalıcı bir tome etkisi alırsın!";
+        public string Description => "Grants a random permanent tome effect!";
         public float DefaultDuration => 0f; // anlık, kalıcı
 
         private static readonly System.Random _rng = new();

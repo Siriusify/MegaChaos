@@ -13,7 +13,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_mobrain";
         public string Name => "Mob Rain";
-        public string Description => "Etrafa aniden çok sayıda düşman yağar!";
+        public string Description => "A large number of enemies suddenly spawn around you!";
         public float DefaultDuration => 0f; // anlık
 
         public void OnStart()

@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_hyperspeed";
         public string Name => "Hyper Speed";
-        public string Description => "Oyun delicesine hızlanır — her şey fırtına gibi geçer!";
+        public string Description => "The game goes crazy fast — everything moves like a storm!";
         public float DefaultDuration => 30f;
 
         private float _originalTimeScale;

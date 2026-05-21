@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_rainbow";
         public string Name => "Rainbow World";
-        public string Description => "The world turns into a psychedelic rainbow!";
+        public string Description => "The screen constantly changes colors!";
         public float DefaultDuration => 30f;
 
         private Texture2D _tintTex;

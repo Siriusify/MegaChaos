@@ -8,7 +8,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_nohud";
         public string Name => "No HUD";
-        public string Description => "Can, XP, altın barları kaybolur — upgrade ekranları açık kalır!";
+        public string Description => "Health, XP, and gold bars disappear — but upgrade screens remain!";
         public float DefaultDuration => 30f;
 
         private static readonly string[] HudTypeNames = { "InventoryHud", "XpAndGoldHUD" };

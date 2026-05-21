@@ -10,7 +10,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_tvstatic";
         public string Name => "TV Static";
-        public string Description => "The screen fills with noise — like a broken TV signal.";
+        public string Description => "The screen is covered in old TV static!";
         public float DefaultDuration => 30f;
 
         private Texture2D _noiseTex;

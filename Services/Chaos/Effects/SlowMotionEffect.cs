@@ -6,7 +6,7 @@ namespace MegaChaos.Services.Chaos.Effects
     {
         public string Id => "effect_slowmotion";
         public string Name => "Bullet Time";
-        public string Description => "Zaman ağır çekime geçer — her şey yavaşlar!";
+        public string Description => "Time enters slow motion — everything slows down!";
         public float DefaultDuration => 30f;
 
         private float _originalTimeScale;
