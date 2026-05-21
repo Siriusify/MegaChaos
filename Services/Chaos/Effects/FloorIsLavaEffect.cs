@@ -36,28 +36,42 @@ namespace MegaChaos.Services.Chaos.Effects
                     _playerHealth = GameReflection.GetMember(inventory, "playerHealth");
                 }
 
-                // 1. Check for Lava prefab in memory
-                var allGos = UnityEngine.Object.FindObjectsOfType<GameObject>();
+                // 1. Check for Lava prefab in memory using safe Hierarchy navigation (Avoids IL2CPP Stripping errors)
                 GameObject lavaPrefab = null;
 
-                if (allGos != null)
+                try
                 {
-                    foreach (var go in allGos)
+                    // First try to find CryptGeneration which holds the Lava
+                    var cryptGen = GameObject.Find("CryptGeneration");
+                    if (cryptGen != null)
                     {
-                        if (go == null) continue;
-                        
-                        // Ignore the native challenge controller
-                        if (go.name.Equals("TheFloorIsLava", StringComparison.OrdinalIgnoreCase))
-                            continue;
-
-                        if (lavaPrefab == null && go.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
+                        var transforms = cryptGen.GetComponentsInChildren<Transform>(true);
+                        foreach (var t in transforms)
                         {
-                            if (go.GetComponent<Renderer>() != null)
+                            if (t != null && t.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
                             {
-                                lavaPrefab = go;
+                                if (t.GetComponent<Renderer>() != null)
+                                {
+                                    lavaPrefab = t.gameObject;
+                                    break;
+                                }
                             }
                         }
                     }
+
+                    // Fallback to direct find
+                    if (lavaPrefab == null)
+                    {
+                        var directLava = GameObject.Find("Lava");
+                        if (directLava != null && directLava.GetComponent<Renderer>() != null)
+                        {
+                            lavaPrefab = directLava;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    MegaChaos.Main.Warn("[FloorIsLava] Find lava error: " + e.Message);
                 }
 
                 // 2. Fallback if Lava is not found
