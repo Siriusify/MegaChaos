@@ -45,18 +45,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     var cryptGen = GameObject.Find("CryptGeneration");
                     if (cryptGen != null)
                     {
-                        var transforms = cryptGen.GetComponentsInChildren<Transform>(true);
-                        foreach (var t in transforms)
-                        {
-                            if (t != null && t.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                if (t.GetComponent<Renderer>() != null)
-                                {
-                                    lavaPrefab = t.gameObject;
-                                    break;
-                                }
-                            }
-                        }
+                        lavaPrefab = FindLavaRecursive(cryptGen.transform);
                     }
 
                     // Fallback to direct find
@@ -198,6 +187,27 @@ namespace MegaChaos.Services.Chaos.Effects
         }
 
         public void OnGUI() { }
+
+        private GameObject FindLavaRecursive(Transform parent)
+        {
+            if (parent == null) return null;
+            
+            if (parent.name.IndexOf("Lava", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                if (parent.GetComponent<Renderer>() != null)
+                {
+                    return parent.gameObject;
+                }
+            }
+            
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                var result = FindLavaRecursive(parent.GetChild(i));
+                if (result != null) return result;
+            }
+            
+            return null;
+        }
 
         public void OnEnd()
         {
