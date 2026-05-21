@@ -56,7 +56,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 foreach (var obj in transforms)
                 {
                     var t = obj as Transform;
-                    if (t != null && GetFullPath(t) == path)
+                    if (t != null && GetFullPath(t).EndsWith(path, StringComparison.OrdinalIgnoreCase))
                     {
                         return t.gameObject;
                     }
