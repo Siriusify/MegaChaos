@@ -50,43 +50,43 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             try
             {
-                // 1. Search in all loaded scenes
-                for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
-                {
-                    var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
-                    if (!scene.isLoaded) continue;
-
-                    var roots = scene.GetRootGameObjects();
-                    foreach (var root in roots)
-                    {
-                        var transforms = root.GetComponentsInChildren<Transform>(true);
-                        foreach (var t in transforms)
-                        {
-                            if (t != null && GetFullPath(t).EndsWith(path, StringComparison.OrdinalIgnoreCase))
-                            {
-                                return t.gameObject;
-                            }
-                        }
-                    }
-                }
-
-                // 2. Search in DontDestroyOnLoad by finding a known active object there
+                var roots = new System.Collections.Generic.List<Transform>();
+                
+                var gameUi = GameObject.Find("GameUI");
+                if (gameUi != null) roots.Add(gameUi.transform);
+                
                 var alwaysMgr = GameObject.Find("AlwaysManagers");
-                if (alwaysMgr != null)
+                if (alwaysMgr != null) roots.Add(alwaysMgr.transform);
+
+                foreach (var root in roots)
                 {
-                    var transforms = alwaysMgr.transform.root.GetComponentsInChildren<Transform>(true);
-                    foreach (var t in transforms)
-                    {
-                        if (t != null && GetFullPath(t).EndsWith(path, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return t.gameObject;
-                        }
-                    }
+                    var found = SearchTransform(root, path);
+                    if (found != null) return found;
                 }
 
                 return null;
             }
             catch { return null; }
+        }
+
+        private GameObject SearchTransform(Transform current, string path)
+        {
+            if (current == null) return null;
+            
+            if (GetFullPath(current).EndsWith(path, StringComparison.OrdinalIgnoreCase))
+            {
+                return current.gameObject;
+            }
+
+            int childCount = current.childCount;
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = current.GetChild(i);
+                var found = SearchTransform(child, path);
+                if (found != null) return found;
+            }
+            
+            return null;
         }
 
         private string GetFullPath(Transform current)
