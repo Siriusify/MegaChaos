@@ -71,7 +71,10 @@ namespace MegaChaos.Services.Chaos.Effects
                     }
                 }
 
-                NotificationService.Show($"TAX AUDIT! -{_goldSeized} Gold seized! Returns in 5s...", null, NotificationService.NotificationType.Unlucky);
+                string msg = _goldSeized > 0
+                    ? $"TAX AUDIT! -{_goldSeized} Gold stolen permanently!"
+                    : "TAX AUDIT! Nothing to steal...";
+                NotificationService.Show(msg, null, NotificationService.NotificationType.Unlucky);
                 Main.Msg($"[TaxAudit] Seized {_goldSeized} gold, {_seizedItems.Count} item types. (fake, returns on end)");
             }
             catch (Exception ex)

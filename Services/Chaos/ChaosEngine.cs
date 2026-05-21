@@ -250,8 +250,8 @@ namespace MegaChaos.Services.Chaos
             // Keep only last 3
             while (display.Count > 3) display.RemoveAt(0);
 
-            float screenW = Screen.width;
-            float screenH = Screen.height;
+            float screenW = Screen.width > 100 ? Screen.width : 1920f;
+            float screenH = Screen.height > 100 ? Screen.height : 1080f;
             float startX = screenW - OverlayWidth - OverlayRightMargin;
             float startY = screenH / 2f - (display.Count * OverlayRowH) / 2f;
 
@@ -269,6 +269,10 @@ namespace MegaChaos.Services.Chaos
                     alpha = Mathf.Clamp01(s.EndFadeTimer / OverlayFadeTime);
 
                 float rowY = startY + i * OverlayRowH;
+
+                // ── Dark Background for readability ──────────────────────
+                GUI.color = new Color(0.1f, 0.1f, 0.1f, 0.6f * alpha);
+                GUI.DrawTexture(new Rect(startX - 10f, rowY - 5f, OverlayWidth + 20f, OverlayRowH), _barBgTex);
 
                 // ── Name ─────────────────────────────────
                 var nameStyle = isFading ? _overlayFadeStyle : _overlayNameStyle;

@@ -131,28 +131,20 @@ namespace MegaChaos.Services.Chaos.Effects
             }
             catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] statToTomes: " + ex.Message); }
 
-            // Yol 3: Resources.FindObjectsOfTypeAll(TomeData)
+            // Yol 3: Resources.FindObjectsOfTypeAll<ScriptableObject>()
             try
             {
-                var tomeDataType = GameReflection.FindType("TomeData");
-                if (tomeDataType != null)
+                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.ScriptableObject>();
+                if (allObjs != null)
                 {
-                    var findMethod = typeof(UnityEngine.Resources).GetMethod(
-                        "FindObjectsOfTypeAll",
-                        BindingFlags.Static | BindingFlags.Public,
-                        null, new[] { typeof(Type) }, null);
-
-                    if (findMethod != null)
+                    var list = new List<object>();
+                    foreach (var obj in allObjs)
                     {
-                        var results = findMethod.Invoke(null, new object[] { tomeDataType }) as IEnumerable;
-                        if (results != null)
-                        {
-                            var list = new List<object>();
-                            foreach (var obj in results) if (obj != null) list.Add(obj);
-                            MegaChaos.Main.Msg($"[RandomTome] Resources yolu: {list.Count} TomeData bulundu");
-                            if (list.Count > 0) return list[_rng.Next(list.Count)];
-                        }
+                        if (obj != null && obj.GetType().Name == "TomeData")
+                            list.Add(obj);
                     }
+                    MegaChaos.Main.Msg($"[RandomTome] Resources yolu: {list.Count} TomeData bulundu");
+                    if (list.Count > 0) return list[_rng.Next(list.Count)];
                 }
             }
             catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] Resources: " + ex.Message); }
@@ -251,6 +243,23 @@ namespace MegaChaos.Services.Chaos.Effects
                 }
             }
             catch { }
+            
+            try
+            {
+                var allObjs = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.ScriptableObject>();
+                if (allObjs != null)
+                {
+                    var list = new System.Collections.Generic.List<object>();
+                    foreach (var obj in allObjs)
+                    {
+                        if (obj != null && obj.GetType().Name == "TomeData")
+                            list.Add(obj);
+                    }
+                    if (list.Count > 0) return list[new System.Random().Next(list.Count)];
+                }
+            }
+            catch { }
+
             return null;
         }
 
