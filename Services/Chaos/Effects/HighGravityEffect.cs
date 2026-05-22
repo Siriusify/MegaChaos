@@ -34,6 +34,12 @@ namespace MegaChaos.Services.Chaos.Effects
 
         public void OnStart()
         {
+            if (_applied)
+            {
+                NotificationService.Show("High gravity extended!", null, NotificationService.NotificationType.Warning);
+                return;
+            }
+
             _applied = false;
             try
             {

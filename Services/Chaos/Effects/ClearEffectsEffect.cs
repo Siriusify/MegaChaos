@@ -3,12 +3,16 @@ using UnityEngine;
 
 namespace MegaChaos.Services.Chaos.Effects
 {
-    public class ClearEffectsEffect : IChaosEffect
+    public class ClearEffectsEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_cleareffects";
         public string Name => "Chaos Cleanser";
         public string Description => "Clears all currently active timed chaos effects!";
         public float DefaultDuration => 0f;
+
+        public bool HideProgressBar => true;
+
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
 
         public void OnStart()
         {

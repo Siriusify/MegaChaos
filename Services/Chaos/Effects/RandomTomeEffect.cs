@@ -1,25 +1,20 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace MegaChaos.Services.Chaos.Effects
 {
-    /// <summary>
-    /// Tome Çekiliş:
-    /// 1. TomeInventory.tomeUpgrade dict → Oyunun içinde tanımlı TomeData nesneleri
-    /// 2. Eğer dict boşsa: Resources.FindObjectsOfTypeAll(TomeData) ile ScriptableObject'ları ara
-    /// 3. Bulduğumuz TomeData'nın statModifier'ını permanent=true olarak StatInventory'ye uygula
-    /// 4. TomeInventory.AddTome() ile tome arayüzüne de ekle
-    /// 5. ForceUpdateStats() ile Stats UI'ı güncelle
-    /// </summary>
-    public class RandomTomeEffect : IChaosEffect
+    public class RandomTomeEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_randomtome";
-        public string Name => "Tome Lottery";
+        public string Name => _displayName;
         public string Description => "Grants a random permanent tome effect!";
-        public float DefaultDuration => 0f; // anlık, kalıcı
+        public float DefaultDuration => 0f;
+
+        private string _displayName = "Tome Lottery";
+
+        public bool HideProgressBar => true;
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
 
         private static readonly System.Random _rng = new();
 
@@ -28,16 +23,17 @@ namespace MegaChaos.Services.Chaos.Effects
             try
             {
                 var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
-                var player       = GameReflection.GetStaticMember(myPlayerType, "Instance");
-                var inventory    = GameReflection.GetMember(player, "inventory");
-                var tomeInv      = GameReflection.GetMember(inventory, "tomeInventory");
-                var statInv      = GameReflection.GetMember(inventory, "statInventory");
-                var playerStats  = GameReflection.GetMember(inventory, "playerStats");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                var inventory = GameReflection.GetMember(player, "inventory");
+                var tomeInv = GameReflection.GetMember(inventory, "tomeInventory");
 
-                if (tomeInv == null) { NotificationService.Show("Tome system not found.", null, NotificationService.NotificationType.Unlucky); return; }
+                if (tomeInv == null)
+                {
+                    NotificationService.Show("Tome system not found.", null, NotificationService.NotificationType.Unlucky);
+                    return;
+                }
 
-                // TomeData bul
-                object tomeData = FindTomeData(tomeInv, inventory);
+                var tomeData = FindTomeData(tomeInv);
 
                 if (tomeData == null)
                 {
@@ -46,52 +42,46 @@ namespace MegaChaos.Services.Chaos.Effects
                     return;
                 }
 
-                // TomeData.statModifier → bu tome'un sağladığı stat bonusu
-                var statModifier = GameReflection.GetMember(tomeData, "statModifier");
-
-                if (statModifier != null && statInv != null)
+                var eRarityType = GameReflection.FindType("Il2CppAssets.Scripts.Inventory__Items__Pickups.ERarity", "Assets.Scripts.Inventory__Items__Pickups.ERarity", "ERarity");
+                object rarity = 0; // ERarity.New is usually 0
+                if (eRarityType != null)
                 {
-                    var statModType = statModifier.GetType();
-                    // Kalıcı olarak uygula (permanent=true)
-                    GameReflection.InvokeInstance(statInv, "ChangeStat",
-                        new[] { statModType, typeof(bool), typeof(float), typeof(bool) },
-                        statModifier, true, 0f, false);
+                    try { rarity = Enum.Parse(eRarityType, "New"); } catch { }
                 }
 
-                // TomeInventory.AddTome ile UI'a da ekle
-                try
+                object upgradeOffer = null;
+                try { upgradeOffer = GameReflection.InvokeInstance(tomeData, "GetUpgradeOffer", new[] { eRarityType ?? typeof(int) }, rarity); } catch { }
+
+                var addTomeMethod = GameReflection.FindAnyMethod(tomeInv.GetType(), "AddTome");
+                if (addTomeMethod != null)
                 {
-                    var eRarityType = GameReflection.FindType(
-                        "Il2CppAssets.Scripts.Inventory__Items__Pickups.ERarity",
-                        "Assets.Scripts.Inventory__Items__Pickups.ERarity", "ERarity");
-
-                    object rarity = 0;
-                    if (eRarityType != null)
-                    {
-                        var rarities = Enum.GetValues(eRarityType);
-                        rarity = rarities.GetValue(_rng.Next(rarities.Length));
-                    }
-
-                    object upgradeList = null;
-                    try { upgradeList = GameReflection.InvokeInstance(tomeData, "GetUpgradeOffer", new[] { eRarityType ?? typeof(int) }, rarity); } catch { }
-
-                    GameReflection.InvokeInstance(tomeInv, "AddTome",
-                        new[] { tomeData.GetType(), upgradeList?.GetType() ?? typeof(List<object>), eRarityType ?? typeof(int) },
-                        tomeData, upgradeList, rarity);
+                    var prms = addTomeMethod.GetParameters();
+                    if (prms.Length == 3)
+                        addTomeMethod.Invoke(tomeInv, new object[] { tomeData, upgradeOffer, rarity });
+                    else if (prms.Length == 2)
+                        addTomeMethod.Invoke(tomeInv, new object[] { tomeData, rarity });
+                    else if (prms.Length == 1)
+                        addTomeMethod.Invoke(tomeInv, new object[] { tomeData });
                 }
-                catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] AddTome UI: " + ex.Message); }
 
-                // Stats UI güncelle
+                var playerStats = GameReflection.GetMember(inventory, "playerStats");
                 if (playerStats != null)
-                    try { GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", Type.EmptyTypes); } catch { }
+                {
+                    GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", Type.EmptyTypes);
+                }
 
-                // Tome adı
-                object tomeName = null;
-                try { tomeName = GameReflection.GetMember(tomeData, "eTome"); } catch { }
-                try { if (tomeName == null) tomeName = GameReflection.InvokeInstance(tomeData, "GetName", Type.EmptyTypes); } catch { }
+                object tomeNameObj = null;
+                try { tomeNameObj = GameReflection.GetMember(tomeData, "eTome"); } catch { }
+                if (tomeNameObj == null) try { tomeNameObj = GameReflection.InvokeInstance(tomeData, "GetName", Type.EmptyTypes); } catch { }
 
-                NotificationService.Show($"+Tome: {tomeName ?? "???"} 📖", null, NotificationService.NotificationType.Reward);
-                MegaChaos.Main.Msg($"[RandomTome] Tome eklendi: {tomeName}");
+                string tNameStr = tomeNameObj?.ToString() ?? "???";
+                if (tNameStr.StartsWith("Tome")) tNameStr = tNameStr.Substring(4);
+                tNameStr = System.Text.RegularExpressions.Regex.Replace(tNameStr, "([a-z])([A-Z])", "$1 $2");
+
+                _displayName = $"Tome Lottery: {tNameStr}";
+
+                NotificationService.Show($"+Tome: {tNameStr} 📖", null, NotificationService.NotificationType.Reward);
+                MegaChaos.Main.Msg($"[RandomTome] Tome eklendi: {tNameStr}");
             }
             catch (Exception ex)
             {
@@ -99,81 +89,61 @@ namespace MegaChaos.Services.Chaos.Effects
             }
         }
 
-        private object FindTomeData(object tomeInv, object inventory)
+        private object FindTomeData(object tomeInv)
         {
-            var eTomeType = GameReflection.FindType(
-                "Il2CppAssets.Scripts._Data.Tomes.ETome",
-                "Assets.Scripts._Data.Tomes.ETome", "ETome");
-
-            // Yol 1: tomeUpgrade dict
             try
             {
-                var tomeUpgrade = GameReflection.GetMember(tomeInv, "tomeUpgrade") as IDictionary;
-                if (tomeUpgrade != null && tomeUpgrade.Count > 0)
-                {
-                    var candidates = GetUnownedTomeData(tomeUpgrade, tomeInv, eTomeType);
-                    if (candidates.Count > 0) return candidates[_rng.Next(candidates.Count)];
-                }
-            }
-            catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] tomeUpgrade: " + ex.Message); }
+                var alwaysManagerType = GameReflection.FindType("AlwaysManager", "Il2CppAlwaysManager");
+                var amInstance = GameReflection.GetStaticMember(alwaysManagerType, "Instance");
+                var dataManager = GameReflection.GetMember(amInstance, "dataManager");
+                var allTomes = GameReflection.GetMember(dataManager, "tomeData");
 
-            // Yol 2: statToTomes dict
-            try
-            {
-                var statToTomes = GameReflection.GetMember(tomeInv, "statToTomes") as IDictionary;
-                if (statToTomes != null && statToTomes.Count > 0)
-                {
-                    var list = new List<object>();
-                    foreach (DictionaryEntry e in statToTomes)
-                        if (e.Value != null) list.Add(e.Value);
-                    if (list.Count > 0) return list[_rng.Next(list.Count)];
-                }
-            }
-            catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] statToTomes: " + ex.Message); }
+                if (allTomes == null) return null;
 
-            // Yol 3: GameReflection.FindObjectsOfTypeAll
-            try
-            {
-                var tomeDataType = GameReflection.FindType("TomeData", "Il2Cpp.TomeData");
-                if (tomeDataType != null)
+                var unowned = new List<object>();
+                var fallback = new List<object>();
+
+                var eTomeType = GameReflection.FindType("Il2CppAssets.Scripts._Data.Tomes.ETome", "Assets.Scripts._Data.Tomes.ETome", "ETome");
+
+                var enumerator = GameReflection.InvokeInstance(allTomes, "GetEnumerator", Type.EmptyTypes);
+                if (enumerator != null)
                 {
-                    var allObjs = GameReflection.FindObjectsOfTypeAll(tomeDataType);
-                    if (allObjs != null)
+                    var moveNextMethod = GameReflection.FindAnyMethod(enumerator.GetType(), "MoveNext");
+                    var currentProp = enumerator.GetType().GetProperty("Current", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+                    if (moveNextMethod != null && currentProp != null)
                     {
-                        var list = new System.Collections.Generic.List<object>();
-                        foreach (var obj in allObjs) if (obj != null) list.Add(obj);
-                        MegaChaos.Main.Msg($"[RandomTome] Resources yolu: {list.Count} TomeData bulundu");
-                        if (list.Count > 0) return list[_rng.Next(list.Count)];
+                        while ((bool)moveNextMethod.Invoke(enumerator, null))
+                        {
+                            var currentKV = currentProp.GetValue(enumerator);
+                            var eTome = GameReflection.GetMember(currentKV, "Key");
+                            var td = GameReflection.GetMember(currentKV, "Value");
+
+                            if (td == null) continue;
+
+                            fallback.Add(td);
+                            try
+                            {
+                                var has = GameReflection.InvokeInstance(tomeInv, "HasTome", new[] { eTomeType }, eTome);
+                                if (has == null || !(bool)has) unowned.Add(td);
+                            }
+                            catch { unowned.Add(td); }
+                        }
                     }
                 }
+
+                var candidates = unowned.Count > 0 ? unowned : fallback;
+                if (candidates.Count > 0)
+                {
+                    return candidates[_rng.Next(candidates.Count)];
+                }
             }
-            catch (Exception ex) { MegaChaos.Main.Warn("[RandomTome] Resources: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MegaChaos.Main.Warn("[RandomTome] FindTomeData error: " + ex.Message);
+            }
 
             return null;
-        }
-
-        private List<object> GetUnownedTomeData(IDictionary dict, object tomeInv, Type eTomeType)
-        {
-            var unowned = new List<object>();
-            var all     = new List<object>();
-
-            foreach (DictionaryEntry entry in dict)
-            {
-                if (entry.Value == null) continue;
-                all.Add(entry.Value);
-
-                if (eTomeType != null)
-                {
-                    try
-                    {
-                        var has = GameReflection.InvokeInstance(tomeInv, "HasTome", new[] { eTomeType }, entry.Key);
-                        if (has == null || !(bool)has) unowned.Add(entry.Value);
-                    }
-                    catch { unowned.Add(entry.Value); }
-                }
-            }
-
-            return unowned.Count > 0 ? unowned : all;
         }
 
         public void OnUpdate(float dt) { }
@@ -181,81 +151,132 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnEnd() { }
     }
 
-    /// <summary>
-    /// Fake Tome Lottery — Gives a tome but removes its stat bonus after 5 seconds.
-    /// Appears as "Tome Lottery" to the player.
-    /// </summary>
-    public class FakeTomeLotteryEffect : IChaosEffect
+    public class FakeTomeLotteryEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_faketome";
-        public string Name => "Tome Lottery";
+        public string Name => _displayName;
         public string Description => "Gives a tome… then takes it back after 5 seconds!";
         public float DefaultDuration => 5f;
 
-        private object _appliedStatModifier;
-        private object _statInv;
-        private object _playerStats;
+        private string _displayName = "Tome Lottery";
+        public bool HideProgressBar => true;
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
+
+        private object _addedETome;
         private string _tomeName;
+        private object _tomeInv;
+        private object _playerStats;
 
         public void OnStart()
         {
             try
             {
-                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer",
-                    "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
-                var player      = GameReflection.GetStaticMember(myPlayerType, "Instance");
-                var inventory   = GameReflection.GetMember(player, "inventory");
-                var tomeInv     = GameReflection.GetMember(inventory, "tomeInventory");
-                _statInv        = GameReflection.GetMember(inventory, "statInventory");
-                _playerStats    = GameReflection.GetMember(inventory, "playerStats");
+                var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
+                var player = GameReflection.GetStaticMember(myPlayerType, "Instance");
+                var inventory = GameReflection.GetMember(player, "inventory");
+                _tomeInv = GameReflection.GetMember(inventory, "tomeInventory");
+                _playerStats = GameReflection.GetMember(inventory, "playerStats");
 
-                if (tomeInv == null) { NotificationService.Show("Tome system not found.", null, NotificationService.NotificationType.Unlucky); return; }
-
-                // Reuse FindTomeData via RandomTomeEffect (static helper not available; duplicate minimal logic)
-                object tomeData = FindQuickTomeData(tomeInv);
-                if (tomeData == null) { NotificationService.Show("Tome Lottery: No tome data found.", null, NotificationService.NotificationType.Unlucky); return; }
-
-                _appliedStatModifier = GameReflection.GetMember(tomeData, "statModifier");
-                if (_appliedStatModifier != null && _statInv != null)
+                if (_tomeInv == null)
                 {
-                    var t = _appliedStatModifier.GetType();
-                    GameReflection.InvokeInstance(_statInv, "ChangeStat",
-                        new[] { t, typeof(bool), typeof(float), typeof(bool) },
-                        _appliedStatModifier, true, 0f, false);
+                    NotificationService.Show("Tome system not found.", null, NotificationService.NotificationType.Unlucky);
+                    return;
                 }
 
-                try { _tomeName = GameReflection.GetMember(tomeData, "eTome")?.ToString(); } catch { }
-                NotificationService.Show($"+Tome: {_tomeName ?? "???"} 📖", null, NotificationService.NotificationType.Reward);
+                var tomeData = FindUnownedTomeData(_tomeInv);
+                if (tomeData == null)
+                {
+                    NotificationService.Show("Tome Lottery: No new tomes available.", null, NotificationService.NotificationType.Unlucky);
+                    return;
+                }
+
+                object tomeNameObj = null;
+                try { tomeNameObj = GameReflection.GetMember(tomeData, "eTome"); } catch { }
+                if (tomeNameObj == null) try { tomeNameObj = GameReflection.InvokeInstance(tomeData, "GetName", Type.EmptyTypes); } catch { }
+
+                _addedETome = tomeNameObj;
+
+                var eRarityType = GameReflection.FindType("Il2CppAssets.Scripts.Inventory__Items__Pickups.ERarity", "Assets.Scripts.Inventory__Items__Pickups.ERarity", "ERarity");
+                object rarity = 0; // ERarity.New
+                if (eRarityType != null) { try { rarity = Enum.Parse(eRarityType, "New"); } catch { } }
+
+                object upgradeOffer = null;
+                try { upgradeOffer = GameReflection.InvokeInstance(tomeData, "GetUpgradeOffer", new[] { eRarityType ?? typeof(int) }, rarity); } catch { }
+
+                var addTomeMethod = GameReflection.FindAnyMethod(_tomeInv.GetType(), "AddTome");
+                if (addTomeMethod != null)
+                {
+                    var prms = addTomeMethod.GetParameters();
+                    if (prms.Length == 3)
+                        addTomeMethod.Invoke(_tomeInv, new object[] { tomeData, upgradeOffer, rarity });
+                    else if (prms.Length == 2)
+                        addTomeMethod.Invoke(_tomeInv, new object[] { tomeData, rarity });
+                    else if (prms.Length == 1)
+                        addTomeMethod.Invoke(_tomeInv, new object[] { tomeData });
+                }
+
+                if (_playerStats != null)
+                {
+                    GameReflection.InvokeInstance(_playerStats, "ForceUpdateStats", Type.EmptyTypes);
+                }
+
+                string tNameStr = tomeNameObj?.ToString() ?? "???";
+                if (tNameStr.StartsWith("Tome")) tNameStr = tNameStr.Substring(4);
+                tNameStr = System.Text.RegularExpressions.Regex.Replace(tNameStr, "([a-z])([A-Z])", "$1 $2");
+                _tomeName = tNameStr;
+
+                _displayName = $"Tome Lottery: {tNameStr}";
+                NotificationService.Show($"+Tome: {tNameStr} 📖", null, NotificationService.NotificationType.Reward);
             }
-            catch (Exception ex) { Main.Error("[FakeTome] OnStart: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MegaChaos.Main.Error("[FakeTome] OnStart: " + ex.Message);
+            }
         }
 
-        private object FindQuickTomeData(object tomeInv)
+        private object FindUnownedTomeData(object tomeInv)
         {
             try
             {
-                var dict = GameReflection.GetMember(tomeInv, "tomeUpgrade") as System.Collections.IDictionary;
-                if (dict != null && dict.Count > 0)
+                var alwaysManagerType = GameReflection.FindType("AlwaysManager", "Il2CppAlwaysManager");
+                var amInstance = GameReflection.GetStaticMember(alwaysManagerType, "Instance");
+                var dataManager = GameReflection.GetMember(amInstance, "dataManager");
+                var allTomes = GameReflection.GetMember(dataManager, "tomeData");
+
+                if (allTomes == null) return null;
+
+                var unowned = new List<object>();
+                var eTomeType = GameReflection.FindType("Il2CppAssets.Scripts._Data.Tomes.ETome", "Assets.Scripts._Data.Tomes.ETome", "ETome");
+
+                var enumerator = GameReflection.InvokeInstance(allTomes, "GetEnumerator", Type.EmptyTypes);
+                if (enumerator != null)
                 {
-                    var vals = new System.Collections.Generic.List<object>();
-                    foreach (System.Collections.DictionaryEntry e in dict) if (e.Value != null) vals.Add(e.Value);
-                    if (vals.Count > 0) return vals[new System.Random().Next(vals.Count)];
-                }
-            }
-            catch { }
-            
-            try
-            {
-                var tomeDataType = GameReflection.FindType("TomeData", "Il2Cpp.TomeData");
-                if (tomeDataType != null)
-                {
-                    var allObjs = GameReflection.FindObjectsOfTypeAll(tomeDataType);
-                    if (allObjs != null)
+                    var moveNextMethod = GameReflection.FindAnyMethod(enumerator.GetType(), "MoveNext");
+                    var currentProp = enumerator.GetType().GetProperty("Current", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+                    if (moveNextMethod != null && currentProp != null)
                     {
-                        var list = new System.Collections.Generic.List<object>();
-                        foreach (var obj in allObjs) if (obj != null) list.Add(obj);
-                        if (list.Count > 0) return list[new System.Random().Next(list.Count)];
+                        while ((bool)moveNextMethod.Invoke(enumerator, null))
+                        {
+                            var currentKV = currentProp.GetValue(enumerator);
+                            var eTome = GameReflection.GetMember(currentKV, "Key");
+                            var td = GameReflection.GetMember(currentKV, "Value");
+
+                            if (td == null) continue;
+
+                            try
+                            {
+                                var has = GameReflection.InvokeInstance(tomeInv, "HasTome", new[] { eTomeType }, eTome);
+                                if (has == null || !(bool)has) unowned.Add(td);
+                            }
+                            catch { unowned.Add(td); }
+                        }
                     }
+                }
+
+                if (unowned.Count > 0)
+                {
+                    return unowned[new System.Random().Next(unowned.Count)];
                 }
             }
             catch { }
@@ -270,22 +291,38 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             try
             {
-                if (_appliedStatModifier != null && _statInv != null)
+                if (_tomeInv != null && _addedETome != null)
                 {
-                    // Invert the stat modifier to undo the buff
-                    var t = _appliedStatModifier.GetType();
-                    // Negate by applying the same modifier but treat as removing
-                    GameReflection.InvokeInstance(_statInv, "ChangeStat",
-                        new[] { t, typeof(bool), typeof(float), typeof(bool) },
-                        _appliedStatModifier, false, 0f, false);
+                    var eTomeType = GameReflection.FindType("Il2CppAssets.Scripts._Data.Tomes.ETome", "Assets.Scripts._Data.Tomes.ETome", "ETome");
+                    if (eTomeType != null)
+                    {
+                        var upgrades = GameReflection.GetMember(_tomeInv, "tomeUpgrade");
+                        var levels = GameReflection.GetMember(_tomeInv, "tomeLevels");
+
+                        if (upgrades != null) GameReflection.InvokeInstance(upgrades, "Remove", new[] { eTomeType }, _addedETome);
+                        if (levels != null) GameReflection.InvokeInstance(levels, "Remove", new[] { eTomeType }, _addedETome);
+
+                        var uiManagerType = GameReflection.FindType("UiManager", "Il2CppUiManager");
+                        if (uiManagerType != null)
+                        {
+                            var uiInstance = GameReflection.GetStaticMember(uiManagerType, "Instance");
+                            if (uiInstance != null) GameReflection.InvokeInstance(uiInstance, "RefreshUi", Type.EmptyTypes);
+                        }
+                    }
                 }
+
                 if (_playerStats != null)
-                    try { GameReflection.InvokeInstance(_playerStats, "ForceUpdateStats", Type.EmptyTypes); } catch { }
+                {
+                    GameReflection.InvokeInstance(_playerStats, "ForceUpdateStats", Type.EmptyTypes);
+                }
 
                 NotificationService.Show("Tome Lottery was fake! Tome removed.", null, NotificationService.NotificationType.Warning);
                 ChaosEngine.Instance.AddLogEntry("Tome Lottery (It was fake!)");
             }
-            catch (Exception ex) { Main.Error("[FakeTome] OnEnd: " + ex.Message); }
+            catch (Exception ex)
+            {
+                MegaChaos.Main.Error("[FakeTome] OnEnd: " + ex.Message);
+            }
         }
     }
 }

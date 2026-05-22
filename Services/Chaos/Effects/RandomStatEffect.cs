@@ -5,20 +5,19 @@ using UnityEngine;
 
 namespace MegaChaos.Services.Chaos.Effects
 {
-    /// <summary>
-    /// StatInventory.ChangeStat → İstatistik değişir.
-    /// PlayerStatsNew.ForceUpdateStats → UI hemen yenilenir, Stats penceresinde görünür.
-    /// </summary>
-    public class RandomStatEffect : IChaosEffect
+    public class RandomStatEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_randomstat";
-        public string Name => "Stat Lottery";
-        public string Description => "A random stat is temporarily changed!";
-        public float DefaultDuration => 30f;
+        public string Name => _displayName;
+        public string Description => "A random stat is permanently changed!";
+        public float DefaultDuration => 0f;
+
+        public bool HideProgressBar => true;
+
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
 
         private static readonly System.Random _rng = new();
 
-        // Oyuncu için anlamlı stat'lar (Unused0, EnemyX gibi garip olanları çıkardık)
         private static readonly string[] _usefulStats =
         {
             "MaxHealth", "HealthRegen", "Shield", "Armor", "Evasion",
@@ -28,18 +27,23 @@ namespace MegaChaos.Services.Chaos.Effects
             "IceDamage", "LightningDamage", "HealingMultiplier", "Overheal"
         };
 
-        private bool _applied;
+        private string _displayName = "Stat Lottery";
+
+        private string FormatName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "???";
+            return System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2");
+        }
 
         public void OnStart()
         {
-            _applied = false;
             try
             {
                 var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
                 var player       = GameReflection.GetStaticMember(myPlayerType, "Instance");
                 var inventory    = GameReflection.GetMember(player, "inventory");
                 var statInv      = GameReflection.GetMember(inventory, "statInventory");
-                var playerStats  = GameReflection.GetMember(inventory, "playerStats"); // PlayerStatsNew
+                var playerStats  = GameReflection.GetMember(inventory, "playerStats");
 
                 if (statInv == null) { NotificationService.Show("Stat system not found.", null, NotificationService.NotificationType.Unlucky); return; }
 
@@ -57,36 +61,32 @@ namespace MegaChaos.Services.Chaos.Effects
                     return;
                 }
 
-                // Rastgele anlamlı bir stat seç
-                string statName  = _usefulStats[_rng.Next(_usefulStats.Length)];
-                object chosenStat = Enum.Parse(eStatType, statName);
+                string rawStatName  = _usefulStats[_rng.Next(_usefulStats.Length)];
+                string statName = FormatName(rawStatName);
+                object chosenStat = Enum.Parse(eStatType, rawStatName);
 
                 bool buff       = _rng.NextDouble() > 0.40;
                 float modAmount = buff
-                    ? (float)(1.5 + _rng.NextDouble() * 1.0)   // x1.5 – x2.5
-                    : (float)(0.2 + _rng.NextDouble() * 0.4);  // x0.2 – x0.6
+                    ? (float)(1.5 + _rng.NextDouble() * 1.0)
+                    : (float)(0.2 + _rng.NextDouble() * 0.4);
                 object modType  = Enum.Parse(eStatModifyType, "Multiplication");
 
-                // StatModifier oluştur
                 var modifier = Activator.CreateInstance(statModifierType);
                 GameReflection.SetMember(modifier, "stat",         chosenStat);
                 GameReflection.SetMember(modifier, "modifyType",   modType);
                 GameReflection.SetMember(modifier, "modification", modAmount);
 
-                // ChangeStat: permanent=false, timeout=DefaultDuration, addToShrineLog=false
                 GameReflection.InvokeInstance(statInv, "ChangeStat",
                     new[] { statModifierType, typeof(bool), typeof(float), typeof(bool) },
-                    modifier, false, DefaultDuration, false);
+                    modifier, true, 0f, false);
 
-                // Stats penceresini hemen güncelle (ForceUpdateStats)
                 if (playerStats != null)
                     GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", Type.EmptyTypes);
-
-                _applied = true;
                 string dir = buff ? $"↑ BUFF (x{modAmount:F2})" : $"↓ NERF (x{modAmount:F2})";
-                NotificationService.Show($"{statName}: {dir} (Stats'tan bakabilirsin!)", null,
+                _displayName = $"Stat Lottery: {statName} {dir}";
+                NotificationService.Show($"{statName}: {dir}", null,
                     buff ? NotificationService.NotificationType.Reward : NotificationService.NotificationType.Unlucky);
-                MegaChaos.Main.Msg($"[RandomStat] {statName} {dir} — timeout={DefaultDuration}s");
+                MegaChaos.Main.Msg($"[RandomStat] {statName} {dir} — permanent");
             }
             catch (Exception ex)
             {
@@ -97,24 +97,6 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnUpdate(float dt) { }
         public void OnGUI() { }
 
-        public void OnEnd()
-        {
-            // Timeout ile ChangeStat otomatik kaldırılıyor.
-            // Ama ForceUpdateStats çağırarak UI'ı senkronize et.
-            try
-            {
-                if (_applied)
-                {
-                    var myPlayerType = GameReflection.FindType("Il2CppAssets.Scripts.Actors.Player.MyPlayer", "Assets.Scripts.Actors.Player.MyPlayer", "MyPlayer");
-                    var player       = GameReflection.GetStaticMember(myPlayerType, "Instance");
-                    var inventory    = GameReflection.GetMember(player, "inventory");
-                    var playerStats  = GameReflection.GetMember(inventory, "playerStats");
-                    if (playerStats != null)
-                        GameReflection.InvokeInstance(playerStats, "ForceUpdateStats", Type.EmptyTypes);
-                    NotificationService.Show("Stat back to normal.", null, NotificationService.NotificationType.Reward);
-                }
-            }
-            catch { }
-        }
+        public void OnEnd() { }
     }
 }

@@ -55,8 +55,9 @@ namespace MegaChaos.Services.Chaos
         /// </summary>
         public static void Apply()
         {
-            if (!_baseCapured) return;
-            if (_cam == null || _deltas.Count == 0) return;
+            if (!_baseCapured || _cam == null)
+                EnsureBase();
+            if (!_baseCapured || _cam == null || _deltas.Count == 0) return;
 
             float totalFovOffset = 0f;
             float totalFovMult   = 1f;
@@ -93,7 +94,9 @@ namespace MegaChaos.Services.Chaos
         // ---- Internal ----
         private static void EnsureBase()
         {
-            if (_baseCapured) return;
+            if (_baseCapured && _cam == Camera.main)
+                return;
+
             _cam = Camera.main;
             if (_cam == null) return;
             _baseFov       = _cam.fieldOfView;

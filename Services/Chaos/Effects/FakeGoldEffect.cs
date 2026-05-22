@@ -42,7 +42,12 @@ namespace MegaChaos.Services.Chaos.Effects
 
                 // --- Seize gold ---
                 int currentGold = RunStatService.GetGold();
-                int target = UnityEngine.Random.Range(10, 10000); // 10–9999
+                int level = RunStatService.GetLevel();
+                if (level < 1) level = 1;
+
+                int minAmount = 10 + ((level - 1) * 20);
+                int maxAmount = 50 + (level * 50);
+                int target = UnityEngine.Random.Range(minAmount, maxAmount);
                 _goldSeized = Math.Min(currentGold, target);
                 if (_goldSeized > 0)
                     GameReflection.InvokeInstance(_playerInventory, "ChangeGold", new[] { typeof(int) }, -_goldSeized);
@@ -71,9 +76,16 @@ namespace MegaChaos.Services.Chaos.Effects
                     }
                 }
 
-                string msg = _goldSeized > 0
-                    ? $"TAX AUDIT! -{_goldSeized} Gold stolen!"
-                    : "TAX AUDIT! Nothing to steal...";
+                int itemTypesStolenCount = _seizedItems.Count;
+                string msg = $"GOLD HEIST! Tax Audit: {target}G.";
+                if (_goldSeized > 0) msg += $" Took {_goldSeized}G.";
+                if (remainingDebt > 0)
+                {
+                    msg += $" Short by {remainingDebt}G — seized items to cover it.";
+                }
+                if (itemTypesStolenCount > 0) msg += $" Confiscated {itemTypesStolenCount} item types!";
+                else if (_goldSeized == 0) msg += " Nothing to steal...";
+
                 NotificationService.Show(msg, null, NotificationService.NotificationType.Unlucky);
                 Main.Msg($"[TaxAudit] Seized {_goldSeized} gold, {_seizedItems.Count} item types. (fake, returns on end)");
             }

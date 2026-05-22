@@ -8,12 +8,18 @@ namespace MegaChaos.Services.Chaos.Effects
     /// Item Lottery — Randomly gives 1-3 items OR takes 1-3 items.
     /// Both outcomes are real and permanent.
     /// </summary>
-    public class RandomItemEffect : IChaosEffect
+    public class RandomItemEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_randomitem";
-        public string Name => "Item Lottery";
+        public string Name => _displayName;
         public string Description => "Win or lose random items — luck decides!";
         public float DefaultDuration => 0f;
+
+        private string _displayName = "Item Lottery";
+
+        public bool HideProgressBar => true;
+
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
 
         protected virtual bool ForceGive => false;
         protected virtual bool ForceTake => false;
@@ -48,6 +54,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 var pick = allItems.GetValue(Rng.Next(allItems.Length));
                 for (int i = 0; i < count; i++)
                     GameReflection.InvokeInstance(itemInv, "AddItem", new[] { eItemType, typeof(int) }, pick, 1);
+                _displayName = $"Item Lottery: +{count}x {pick}";
                 NotificationService.Show($"+{count}x {pick} (Item Lottery Win!)", null, NotificationService.NotificationType.Reward);
                 return (pick, count, true);
             }
@@ -69,6 +76,7 @@ namespace MegaChaos.Services.Chaos.Effects
                     GameReflection.InvokeInstance(itemInv, "GetAmount", new[] { eItemType }, pick)));
                 for (int i = 0; i < removeCount; i++)
                     GameReflection.InvokeInstance(itemInv, "RemoveItem", new[] { eItemType, typeof(bool) }, pick, false);
+                _displayName = $"Item Lottery: -{removeCount}x {pick}";
                 NotificationService.Show($"-{removeCount}x {pick} (Item Lottery Loss!)", null, NotificationService.NotificationType.Unlucky);
                 return (pick, removeCount, false);
             }
@@ -83,12 +91,16 @@ namespace MegaChaos.Services.Chaos.Effects
     /// Fake Item Lottery — Removes items but returns them after 5 seconds.
     /// If it gave items, takes them back. Name appears the same as real lottery.
     /// </summary>
-    public class FakeItemLotteryEffect : IChaosEffect
+    public class FakeItemLotteryEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_fakeitemlottery";
-        public string Name => "Item Lottery";
+        public string Name => _displayName;
         public string Description => "Fake item lottery — what's given or taken is reversed after 5 seconds!";
         public float DefaultDuration => 5f;
+
+        private string _displayName = "Item Lottery";
+        public bool HideProgressBar => true;
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
 
         private static readonly System.Random Rng = new();
         private object _eItemType;
@@ -122,6 +134,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 _gave = true;
                 for (int i = 0; i < _count; i++)
                     GameReflection.InvokeInstance(_itemInv, "AddItem", new[] { eType, typeof(int) }, _pickedItem, 1);
+                _displayName = $"Item Lottery: +{_count}x {_pickedItem}";
                 NotificationService.Show($"+{_count}x {_pickedItem} (Item Lottery Win!)", null, NotificationService.NotificationType.Reward);
             }
             else
@@ -144,6 +157,7 @@ namespace MegaChaos.Services.Chaos.Effects
                 _count = removeCount;
                 for (int i = 0; i < removeCount; i++)
                     GameReflection.InvokeInstance(_itemInv, "RemoveItem", new[] { eType, typeof(bool) }, _pickedItem, false);
+                _displayName = $"Item Lottery: -{_count}x {_pickedItem}";
                 NotificationService.Show($"-{_count}x {_pickedItem} (Item Lottery Loss!)", null, NotificationService.NotificationType.Unlucky);
             }
         }

@@ -85,6 +85,7 @@ public sealed class Main : MelonMod
         PatchStartNewMap(harmony);
 
         Msg($"Loaded {Constants.MODNAME} v{Constants.VERSION}");
+        VersionCheckService.CheckForUpdates();
     }
 
     public override void OnUpdate()

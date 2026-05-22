@@ -1,3 +1,4 @@
+using MegaChaos.Services;
 using UnityEngine;
 
 namespace MegaChaos.Services.Chaos.Effects
@@ -32,6 +33,7 @@ namespace MegaChaos.Services.Chaos.Effects
         public void OnGUI()
         {
             if (_black == null) return;
+            if (PauseStateService.IsMenuOpen()) return;
 
             // Pulsing border thickness: base 20% of screen, +/- 5%
             float pct = 0.18f + Mathf.Sin(_elapsed * _pulseSpeed) * 0.06f;

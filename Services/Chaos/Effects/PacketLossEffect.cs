@@ -5,7 +5,7 @@ namespace MegaChaos.Services.Chaos.Effects
     /// <summary>
     /// Sanki internet bağlantısı kesiliyormuş gibi rastgele anlık donmalar (micro-freeze) yapar.
     /// </summary>
-    public class PacketLossEffect : IChaosEffect
+    public class PacketLossEffect : IChaosEffect, IChaosPauseAwareEffect
     {
         public string Id => "effect_packetloss";
         public string Name => "Packet Loss";
@@ -29,12 +29,28 @@ namespace MegaChaos.Services.Chaos.Effects
 
         private void _ScheduleNextFreeze()
         {
-            _nextFreezeIn = Random.Range(0.5f, 2.5f);
+            _nextFreezeIn = Random.Range(0.3f, 1.6f);
         }
 
         public void OnUpdate(float dt)
         {
-            if (_frozen)
+            if (!_frozen)
+            {
+                _nextFreezeIn -= dt;
+                if (_nextFreezeIn <= 0f)
+                {
+                    _frozen = true;
+                    _originalTimeScale = Time.timeScale > 0 ? Time.timeScale : 1f;
+                    Time.timeScale = 0f;
+                    _freezeRemaining = Random.Range(0.12f, 0.45f);
+                }
+            }
+        }
+
+        public void OnPauseState(bool isTimePaused, bool isMenuOpen)
+        {
+            // Eğer biz dondurduysak ve oyunun kendi menüsü açık değilse dondurma süremizi ilerlet
+            if (_frozen && !isMenuOpen)
             {
                 _freezeRemaining -= Time.unscaledDeltaTime;
                 if (_freezeRemaining <= 0f)
@@ -42,16 +58,6 @@ namespace MegaChaos.Services.Chaos.Effects
                     Time.timeScale = _originalTimeScale;
                     _frozen = false;
                     _ScheduleNextFreeze();
-                }
-            }
-            else
-            {
-                _nextFreezeIn -= Time.unscaledDeltaTime;
-                if (_nextFreezeIn <= 0f)
-                {
-                    _frozen = true;
-                    Time.timeScale = 0f;
-                    _freezeRemaining = Random.Range(0.08f, 0.35f);
                 }
             }
         }

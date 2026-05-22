@@ -20,6 +20,8 @@ namespace MegaChaos.Services.Chaos.Effects
         {
             int spawned = 0;
             int wantedCount = UnityEngine.Random.Range(8, 15);
+            GameObject spawnFxTemplate = null;
+            try { spawnFxTemplate = GameObject.Find("EnemySpawnFx(Clone)"); } catch { }
 
             try
             {
@@ -62,6 +64,14 @@ namespace MegaChaos.Services.Chaos.Effects
                                 if (clone != null)
                                 {
                                     spawned++;
+                                    if (spawnFxTemplate != null)
+                                    {
+                                        try
+                                        {
+                                            UnityEngine.Object.Instantiate(spawnFxTemplate, spawnPos, Quaternion.identity);
+                                        }
+                                        catch { }
+                                    }
                                 }
                             }
                             catch (Exception ex)

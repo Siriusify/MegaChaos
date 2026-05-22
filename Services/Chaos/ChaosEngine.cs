@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MegaChaos.Services;
 using UnityEngine;
 
 namespace MegaChaos.Services.Chaos
@@ -61,6 +62,8 @@ namespace MegaChaos.Services.Chaos
         private const float OverlayRightMargin = 20f;
         private const float OverlayBarH   = 8f;
 
+        public float RuntimeDurationMultiplier { get; private set; } = 1f;
+
         public void Update()
         {
             UpdateActiveEffects();
@@ -115,10 +118,8 @@ namespace MegaChaos.Services.Chaos
                             var currentHealthObj = GameReflection.GetMember(playerHealth, "currentHealth");
                             if (currentHealthObj is float fHealth && fHealth <= 0)
                             {
-                                if (_activeEffects.Count > 0)
-                                {
-                                    ClearAllEffects();
-                                }
+                                ResetRuntimeDurationMultiplier();
+                                ClearAllEffects();
                             }
                         }
                     }
@@ -126,14 +127,20 @@ namespace MegaChaos.Services.Chaos
             }
             catch { }
 
-            float dt = Time.deltaTime;
+            bool isTimePaused = PauseStateService.IsTimePaused();
+            bool isMenuOpen = PauseStateService.IsMenuOpen();
+            float dt = isTimePaused ? 0f : Time.deltaTime;
 
             for (int i = _activeEffects.Count - 1; i >= 0; i--)
             {
                 var state = _activeEffects[i];
-                state.Effect.OnUpdate(dt);
+                if (state.Effect is IChaosPauseAwareEffect pauseAware)
+                    pauseAware.OnPauseState(isTimePaused, isMenuOpen);
 
-                if (!state.IsPermanent)
+                if (!isTimePaused)
+                    state.Effect.OnUpdate(dt);
+
+                if (!state.IsPermanent && !isTimePaused)
                 {
                     state.RemainingTime -= dt;
                     if (state.RemainingTime <= 0)
@@ -224,6 +231,7 @@ namespace MegaChaos.Services.Chaos
         {
             var profile = ProfileManager.ActiveProfile;
             float multiplier = profile?.ChaosDurationMultiplier ?? 1f;
+            multiplier *= RuntimeDurationMultiplier;
             float baseDuration = customDuration == -2f ? effect.DefaultDuration : customDuration;
             float durationToUse = baseDuration > 0 ? baseDuration * multiplier : baseDuration;
 
@@ -324,7 +332,13 @@ namespace MegaChaos.Services.Chaos
                 bool isActive = s.EndFadeTimer < 0; // still running
                 bool isFading = !isActive && s.EndFadeTimer >= 0;
                 bool isPermanent = isActive && s.IsPermanent;
-                bool hideBar = s.Effect.Id.StartsWith("effect_fake") || s.Effect.Id == "effect_cleareffects"; // Fake effects and clear effect hide bar
+                bool hideBar = s.Effect.Id.StartsWith("effect_fake") || s.Effect.Id == "effect_cleareffects"; // default hides
+                float? customProgress = null;
+                if (s.Effect is IChaosOverlayEffect overlayEffect)
+                {
+                    hideBar = hideBar || overlayEffect.HideProgressBar;
+                    customProgress = overlayEffect.GetProgress01(s.RemainingTime, s.TotalDuration);
+                }
 
                 float alpha = 1f;
                 if (isFading)
@@ -345,7 +359,8 @@ namespace MegaChaos.Services.Chaos
                 // ── Progress bar ──────────────────────────
                 if (isActive && !isPermanent && s.TotalDuration > 0 && !hideBar)
                 {
-                    float progress = Mathf.Clamp01(s.RemainingTime / s.TotalDuration);
+                    float progress = customProgress ?? Mathf.Clamp01(s.RemainingTime / s.TotalDuration);
+                    progress = Mathf.Clamp01(progress);
                     float barY = rowY + OverlayRowH - OverlayBarH - 2f;
                     float barW = OverlayWidth - 4f;
 
@@ -386,6 +401,16 @@ namespace MegaChaos.Services.Chaos
             _barFillTex.Apply();
 
             _overlayStylesReady = true;
+        }
+
+        public void MultiplyRuntimeDuration(float multiplier)
+        {
+            RuntimeDurationMultiplier *= multiplier;
+        }
+
+        public void ResetRuntimeDurationMultiplier()
+        {
+            RuntimeDurationMultiplier = 1f;
         }
     }
 }

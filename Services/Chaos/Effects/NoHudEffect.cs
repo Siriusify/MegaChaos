@@ -19,7 +19,9 @@ namespace MegaChaos.Services.Chaos.Effects
             "GameUI/HUD",
             "InventoryOverlay/W_Inventory",
             "InventoryOverlay/W_Stats (1)",
-            "AlwaysUI/Canvas/Debug"
+            "AlwaysUI/Canvas/Debug",
+            "PauseUI",
+            "InventoryOverlay"
         };
 
         private readonly List<GameObject> _hiddenObjects = new();
@@ -57,6 +59,15 @@ namespace MegaChaos.Services.Chaos.Effects
                 
                 var alwaysMgr = GameObject.Find("AlwaysManagers");
                 if (alwaysMgr != null) roots.Add(alwaysMgr.transform);
+
+                var pauseUi = GameObject.Find("PauseUI");
+                if (pauseUi != null) roots.Add(pauseUi.transform);
+
+                var inventoryOverlay = GameObject.Find("InventoryOverlay");
+                if (inventoryOverlay != null) roots.Add(inventoryOverlay.transform);
+
+                var alwaysUi = GameObject.Find("AlwaysUI");
+                if (alwaysUi != null) roots.Add(alwaysUi.transform);
 
                 foreach (var root in roots)
                 {

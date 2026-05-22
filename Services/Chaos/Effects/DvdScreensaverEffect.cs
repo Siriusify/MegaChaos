@@ -51,41 +51,11 @@ namespace MegaChaos.Services.Chaos.Effects
             _whiteTex = new Texture2D(1, 1);
             _whiteTex.SetPixel(0, 0, Color.white);
             _whiteTex.Apply();
+            _whiteTex.hideFlags = HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
 
-            // Try to load the embedded dvdlogo.png resource
-            _logoTex = null;
-            try
-            {
-                var asm = System.Reflection.Assembly.GetExecutingAssembly();
-                // The embedded resource name is the namespace + filename as set in .csproj
-                string resourceName = null;
-                foreach (var name in asm.GetManifestResourceNames())
-                {
-                    if (name.EndsWith("dvdlogo.png", StringComparison.OrdinalIgnoreCase))
-                    { resourceName = name; break; }
-                }
-
-                if (resourceName != null)
-                {
-                    using var stream = asm.GetManifestResourceStream(resourceName);
-                    if (stream != null)
-                    {
-                        var bytes = new byte[stream.Length];
-                        stream.Read(bytes, 0, bytes.Length);
-                        var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                        tex.hideFlags = HideFlags.HideAndDontSave;
-                        if (ImageConversion.LoadImage(tex, bytes))
-                        {
-                            _logoTex = tex;
-                            MegaChaos.Main.Msg("[DVD] dvdlogo.png loaded successfully.");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MegaChaos.Main.Warn("[DVD] Could not load dvdlogo.png: " + ex.Message);
-            }
+            _logoTex = BuildLogoTexture();
+            if (_logoTex != null)
+                _logoTex.hideFlags = HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
 
             _stylesInit = false;
 
@@ -214,12 +184,92 @@ namespace MegaChaos.Services.Chaos.Effects
         private static Color NextColor()
             => Palette[UnityEngine.Random.Range(0, Palette.Length)];
 
+        private Texture2D BuildLogoTexture()
+        {
+            try
+            {
+                const int texW = 160;
+                const int texH = 64;
+                var tex = new Texture2D(texW, texH, TextureFormat.RGBA32, false);
+
+                // Clear to transparent
+                for (int y = 0; y < texH; y++)
+                for (int x = 0; x < texW; x++)
+                    tex.SetPixel(x, y, new Color(0f, 0f, 0f, 0f));
+
+                string[] d =
+                {
+                    "11110",
+                    "10001",
+                    "10001",
+                    "10001",
+                    "10001",
+                    "10001",
+                    "11110"
+                };
+                string[] v =
+                {
+                    "10001",
+                    "10001",
+                    "10001",
+                    "10001",
+                    "10001",
+                    "01010",
+                    "00100"
+                };
+
+                int scale = 6;
+                int glyphW = 5 * scale;
+                int glyphH = 7 * scale;
+                int gap = 6;
+                int totalW = glyphW * 3 + gap * 2;
+                int startX = (texW - totalW) / 2;
+                int startY = (texH - glyphH) / 2;
+
+                DrawGlyph(tex, d, startX, startY, scale);
+                DrawGlyph(tex, v, startX + glyphW + gap, startY, scale);
+                DrawGlyph(tex, d, startX + (glyphW + gap) * 2, startY, scale);
+
+                tex.Apply();
+                return tex;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void DrawGlyph(Texture2D tex, string[] glyph, int startX, int startY, int scale)
+        {
+            for (int y = 0; y < glyph.Length; y++)
+            {
+                var row = glyph[y];
+                for (int x = 0; x < row.Length; x++)
+                {
+                    if (row[x] != '1') continue;
+                    for (int yy = 0; yy < scale; yy++)
+                    for (int xx = 0; xx < scale; xx++)
+                    {
+                        int px = startX + x * scale + xx;
+                        int py = startY + (glyph.Length - 1 - y) * scale + yy;
+                        if (px >= 0 && px < tex.width && py >= 0 && py < tex.height)
+                            tex.SetPixel(px, py, Color.white);
+                    }
+                }
+            }
+        }
+
         public void OnEnd()
         {
             if (_whiteTex != null)
             {
                 UnityEngine.Object.Destroy(_whiteTex);
                 _whiteTex = null;
+            }
+            if (_logoTex != null)
+            {
+                UnityEngine.Object.Destroy(_logoTex);
+                _logoTex = null;
             }
             NotificationService.Show("DVD Screensaver ended!", null, NotificationService.NotificationType.Reward);
         }

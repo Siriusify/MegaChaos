@@ -3,23 +3,23 @@ using UnityEngine;
 
 namespace MegaChaos.Services.Chaos.Effects
 {
-    public class TimeExtenderEffect : IChaosEffect
+    public class TimeExtenderEffect : IChaosEffect, IChaosOverlayEffect
     {
         public string Id => "effect_timeextender";
         public string Name => "Time Extender";
         public string Description => "Multiplies the remaining time of all active chaos effects by 2x to 10x!";
         public float DefaultDuration => 0f;
 
+        public bool HideProgressBar => true;
+
+        public float? GetProgress01(float remainingTime, float totalDuration) => null;
+
         public void OnStart()
         {
             float multiplier = UnityEngine.Random.Range(1.5f, 3.5f);
             
-            // Multiply future effects
-            var profile = ProfileManager.ActiveProfile;
-            if (profile != null)
-            {
-                profile.ChaosDurationMultiplier *= multiplier;
-            }
+            // Multiply future effects for this run only
+            ChaosEngine.Instance.MultiplyRuntimeDuration(multiplier);
 
             // Multiply active effects
             ChaosEngine.Instance.ExtendAllActive(multiplier, multiplier);

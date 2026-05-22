@@ -24,10 +24,8 @@ internal static class ItemIconService
     private static MethodInfo _findGenericObjectType;
     private static MethodInfo _findGenericObjectByType;
     private static bool _findMethodsResolved;
-    private static bool _finderProbeLogged;
     private static Type _itemDataType;
     private static Type _eItemType;
-    private static bool _loggedObjectCounts;
 
     public static IconResult GetIcon(string itemName)
     {
@@ -128,7 +126,7 @@ internal static class ItemIconService
         if (itemDataObjects == null)
             return null;
 
-        LogObjectCounts(CountEnumerable(itemDataObjects));
+
 
         object bestItemData = null;
         var bestScore = 0;
@@ -378,7 +376,6 @@ internal static class ItemIconService
         try
         {
             EnsureFindMethodsResolved();
-            LogFinderProbeOnce();
 
             // First, try generic finder APIs discovered via reflection. Some Unity builds expose
             // only generic variants and strip type-based overloads.
@@ -552,13 +549,7 @@ internal static class ItemIconService
         return args;
     }
 
-    private static void LogFinderProbeOnce()
-    {
-    }
 
-    private static void LogObjectCounts(int itemDataCount)
-    {
-    }
 
     private static void WarnMissingOnce(string itemName, string key)
     {

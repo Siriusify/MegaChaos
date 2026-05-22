@@ -18,7 +18,6 @@ namespace MegaChaos.Services.Chaos.Effects
             public string Title;
             public string Message;
             public float TimeLeft;
-            public GUIStyle WindowStyle;
         }
 
         private List<ErrorWindow> _windows;

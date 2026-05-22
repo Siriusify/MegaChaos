@@ -93,6 +93,7 @@ internal static class RuleScheduler
         }
         // Reset chaos timer and clear any running effects on new run
         _chaosTimer = 0f;
+        Chaos.ChaosEngine.Instance.ResetRuntimeDurationMultiplier();
         Chaos.ChaosEngine.Instance.ClearAllEffects();
     }
 

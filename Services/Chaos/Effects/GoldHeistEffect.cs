@@ -31,7 +31,12 @@ namespace MegaChaos.Services.Chaos.Effects
                     "Assets.Scripts.Inventory__Items__Pickups.Items.EItem", "EItem");
 
                 int currentGold = RunStatService.GetGold();
-                int target = UnityEngine.Random.Range(10, 10000); // 10–9999
+                int level = RunStatService.GetLevel();
+                if (level < 1) level = 1;
+
+                int minAmount = 10 + ((level - 1) * 20);
+                int maxAmount = 50 + (level * 50);
+                int target = UnityEngine.Random.Range(minAmount, maxAmount);
 
                 int goldTaken = Math.Min(currentGold, target);
                 if (goldTaken > 0)
@@ -63,7 +68,11 @@ namespace MegaChaos.Services.Chaos.Effects
 
                 string msg = $"GOLD HEIST! Tax Audit: {target}G.";
                 if (goldTaken > 0) msg += $" Took {goldTaken}G.";
-                if (itemTypesStolenCount > 0) msg += $" Confiscated {itemTypesStolenCount} items!";
+                if (remainingDebt > 0)
+                {
+                    msg += $" Short by {remainingDebt}G — seized items to cover it.";
+                }
+                if (itemTypesStolenCount > 0) msg += $" Confiscated {itemTypesStolenCount} item types!";
                 else if (goldTaken == 0) msg += " Nothing to steal...";
 
                 NotificationService.Show(msg, null, NotificationService.NotificationType.Unlucky);
